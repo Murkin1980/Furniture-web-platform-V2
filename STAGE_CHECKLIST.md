@@ -80,6 +80,66 @@
 - [ ] Render artifacts → package deliverable pipeline
 - [ ] Smoke: package B → 3D upgrade request → artifact → package state
 
+## Фаза 4.5 — Conversational Sales + AI Observability
+
+Цель: WhatsApp/AI как безопасный слой продаж без автоответов.
+
+- [ ] WhatsApp inbox (входящие, привязка к conversation)
+- [ ] Conversation-to-order matching
+- [ ] AI package advisor (deterministic + AI-ready)
+- [ ] AI draft replies (без автоотправки)
+- [ ] AI audit logs (ai_runs, ai_actions, ai_feedback)
+- [ ] Manager feedback loop
+- [ ] Package conversion analytics через WhatsApp
+- [ ] Smoke: webhook → normalize → conversation → advisor → draft → manager approve
+
+## Фаза 4.6 — Package C + Project Share Viewer
+
+Цель: Designer/3D Handoff пакет + публичный viewer для клиента.
+
+### 4.6a Package C model
+- [ ] package_c_designer в catalog (price configurable, targetUserType)
+- [ ] includedDeliverables: 3D formats (SKP/OBJ/GLB), dimensions, material_spec, viewer_link
+- [ ] Новые поля: designerHandoffRequired, required3dFormats, fileAccessPolicy
+- [ ] Smoke: package_c → engagement → deliverables seeded
+
+### 4.6b Project files registry
+- [ ] Таблица project_files (file_type, storage_key, mime_type, sha256, download_allowed)
+- [ ] Валидация MIME (опасные типы отклоняются)
+- [ ] Download control (без разрешения — denied)
+- [ ] Smoke: register file → download denied → grant → download ok
+
+### 4.6c Share links
+- [ ] Таблица project_share_links (token_hash, expires_at, access_level)
+- [ ] Endpoint-ы: POST create, GET view, POST comment, POST approve
+- [ ] Package-based permissions (B: no 3D download, C: full download)
+- [ ] Expiration + revoke
+- [ ] Smoke: create link → view → comment → approve → expire → revoke
+
+### 4.6d GLB viewer
+- [ ] Загрузка .glb в браузере
+- [ ] Rotate/zoom интерфейс
+- [ ] Список файлов + download button (если разрешено)
+- [ ] Smoke: upload GLB → viewer renders → download check
+
+## Фаза 5.1 — Designer handoff files SKP/OBJ/GLB
+
+- [ ] Генерация/регистрация SKP/OBJ/GLB файлов для Package C
+- [ ] File roles и access control
+- [ ] Smoke: Package C → file generation → download → access check
+
+## Фаза 5.2 — GLB web viewer
+
+- [ ] Продвинутый GLB viewer (материалы, освещение)
+- [ ] File switching в viewer
+- [ ] Smoke: multi-file viewer → material render
+
+## Фаза 5.3 — Optional Kuula-like 360 tour
+
+- [ ] 360° panorama viewer
+- [ ] Hotspots на мебель
+- [ ] Smoke: panorama → hotspot → file link
+
 ## Общие ритуалы (каждая фаза)
 
 - [ ] Handoff-файл `<project>-stageN-wip-handoff.md` при риске обрыва

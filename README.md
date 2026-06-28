@@ -50,10 +50,10 @@ V2 строится не вокруг базовой автоматизации,
 
 ## Статус
 
-Фаза 3 — PDF intake: **завершена и задеплоена** ✅ (60% общего прогресса, 3/5 фаз)
+Фаза 4 — Supplier-aware pricing: **завершена и задеплоена** ✅ (80% общего прогресса, 4/5 фаз)
 Production: https://furniture-platform-v2.pages.dev · Admin: `/admin` · Прогресс: `/progress`
-API: packages, engagements, payments, templates, analytics, deliverables, deliverable-specs, pdf uploads/drafts (все 200).
-Smoke 244/244, миграции 0001–0004 (local + remote D1).
-PDF intake: manifest v2 (rooms canonical, unified zone types), upload→draft→review→estimate→proposal, human review gate.
-Следующий шаг: Фаза 4 — Supplier-aware pricing.
-Подробности: `PROJECT_PROGRESS.md`.
+API: packages, engagements, payments, templates, analytics, deliverables, deliverable-specs, pdf uploads/drafts, suppliers, price-lists (все 200).
+Smoke 318/318, миграции 0001–0005 (local + remote D1).
+Supplier pricing: versioned catalog, price lists (draft→published→archived), supplier-aware estimates с material tiers.
+Следующий шаг: Фаза 5 — Controlled 3D upgrade.
+Подробнее: `PROJECT_PROGRESS.md`.
