@@ -62,11 +62,13 @@
 
 Цель: смета по позициям строится из актуализированных поставщиков, материалов и ценовых слоёв.
 
-- [ ] Versioned supplier catalog (schema + миграции)
-- [ ] Controlled price-list workflow (импорт, версии, аудит)
-- [ ] Supplier-aware estimate builder
-- [ ] Supplier pricing влияет на Package A и B смету
-- [ ] Smoke: supplier version → estimate → proposal
+**Статус: завершена ✅**
+
+- [x] Versioned supplier catalog (schema + миграции)
+- [x] Controlled price-list workflow (импорт, версии, аудит)
+- [x] Supplier-aware estimate builder
+- [x] Supplier pricing влияет на Package A и B смету
+- [x] Smoke: supplier version → estimate → proposal (318/318)
 
 ## Фаза 5 — Controlled 3D upgrade
 
