@@ -8,10 +8,10 @@
 Цель: платные проектные пакеты 10 000 тг и 20 000 тг становятся штатной частью sales flow.
 
 ### 1.1 Product/Package model и CRM states
-- [ ] Спроектировать сущности `engagementLevel`, `servicePackage`, `creditedOnOrder`, `proposalDepth`, `revisionRound`, `sourceMaterialType`, `upgradeOfferState`, `visualState`
-- [ ] Миграция БД: таблицы пакетов, продуктовых уровней, зачёта в заказ
-- [ ] Backend: package catalog (Package A 10 000 тг, Package B 20 000 тг, Level 1 free rough quote)
-- [ ] Backend: credit-on-order policy (стоимость пакета зачитывается в заказ)
+- [x] Спроектировать сущности `engagementLevel`, `servicePackage`, `creditedOnOrder`, `proposalDepth`, `revisionRound`, `sourceMaterialType`, `upgradeOfferState`, `visualState`
+- [x] Миграция БД: таблицы пакетов, продуктовых уровней, зачёта в заказ
+- [x] Backend: package catalog (Package A 10 000 тг, Package B 20 000 тг, Level 1 free rough quote)
+- [x] Backend: credit-on-order policy (стоимость пакета зачитывается в заказ)
 
 ### 1.2 Коммерческая упаковка пакетов
 - [ ] Шаблоны клиентских сообщений для upsell (rough quote → 10k → 20k → order)
@@ -25,8 +25,8 @@
 - [ ] Дашборд конверсии воронки вовлечения
 
 ### 1.4 Smoke и проверки фазы 1
-- [ ] Миграции применены
-- [ ] Package lifecycle smoke (create → pay → credit-on-order → order)
+- [x] Миграции применены
+- [x] Package lifecycle smoke (create → pay → credit-on-order → order) — 64/64 passed
 - [ ] Analytics pipeline smoke
 - [ ] README и PROJECT_PROGRESS обновлены
 

@@ -1,0 +1,19 @@
+{
+  "name": "furniture-platform-v2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/auth.js && node --check src/packages/package-catalog.js && node --check src/packages/package-store.js && node --check src/packages/credit-on-order.js && node --check functions/api/packages.js && node --check functions/api/orders/[id]/engagements.js && node --check functions/api/orders/[id]/engagements/[eid].js",
+    "test": "node --test",
+    "dev": "wrangler pages dev public --binding RUNTIME_SCHEMA_INIT=true --binding ADMIN_TOKEN=dev-admin-token --compatibility-date=2026-06-28 --persist-to=.wrangler/state",
+    "deploy": "wrangler pages deploy public --project-name=furniture-platform-v2",
+    "db:create": "wrangler d1 create furniture-platform-v2",
+    "db:migrate:local": "wrangler d1 migrations apply furniture-platform-v2 --local",
+    "db:migrate:remote": "wrangler d1 migrations apply furniture-platform-v2 --remote",
+    "smoke:packages": "node scripts/package-lifecycle-smoke.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.95.0"
+  }
+}

@@ -1,0 +1,8 @@
+name = "furniture-platform-v2"
+compatibility_date = "2026-06-28"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "furniture-platform-v2"
+database_id = "be4cf28f-45ad-4834-a5c3-453a7e8ff723"
