@@ -86,7 +86,7 @@
 
 - [ ] WhatsApp inbox (входящие, привязка к conversation)
 - [ ] Conversation-to-order matching
-- [ ] AI package advisor (deterministic + AI-ready)
+- [x] AI package advisor (deterministic + AI-ready) — `src/ai/package-advisor.js`, classifyIntent, suggestClarifyingQuestions, getAdvisorSummary, 35/35 smoke
 - [ ] AI draft replies (без автоотправки)
 - [ ] AI audit logs (ai_runs, ai_actions, ai_feedback)
 - [ ] Manager feedback loop
