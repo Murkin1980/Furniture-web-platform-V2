@@ -225,7 +225,7 @@ function loadMigrationSql() {
 console.log("Package catalog smoke");
 {
   const definitions = listPackageDefinitions();
-  assertEqual(definitions.length, 3, "catalog has 3 packages");
+  assertEqual(definitions.length, 4, "catalog has 4 packages");
 
   const level1 = getPackageDefinition(PACKAGE_CODES.LEVEL_1);
   assertEqual(level1.priceKzt, 0, "level_1 is free");
