@@ -1,5 +1,5 @@
-import { AUTH_SCOPES, authorizeRequest } from "../../../../../../src/auth.js";
-import { getEngagement, incrementRevisionRound, transitionEngagement } from "../../../../../../src/packages/package-store.js";
+import { AUTH_SCOPES, authorizeRequest } from "../../../../../src/auth.js";
+import { getEngagement, incrementRevisionRound, transitionEngagement } from "../../../../../src/packages/package-store.js";
 
 export async function onRequestGet(context) {
   const failure = authorize(context, AUTH_SCOPES.READ);
