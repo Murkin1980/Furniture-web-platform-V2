@@ -47,9 +47,9 @@
   <p class="sub">Платформа мебели, вторая версия · Roadmap: <a href="v2-roadmap.md">v2-roadmap.md</a> · Чек-лист: <a href="STAGE_CHECKLIST.md">STAGE_CHECKLIST.md</a></p>
 
   <div class="grid">
-    <div class="card"><div class="k">Текущий этап</div><div class="v">Фаза 1 — Коммерческая упаковка</div></div>
-    <div class="card"><div class="k">Готовность</div><div class="v">20%</div></div>
-    <div class="card"><div class="k">Последний commit</div><div class="v">1bc1571 — fix import depth</div></div>
+    <div class="card"><div class="k">Текущий этап</div><div class="v">Фаза 1 — завершена ✅</div></div>
+    <div class="card"><div class="k">Готовность</div><div class="v">100% фазы 1</div></div>
+    <div class="card"><div class="k">Последний commit</div><div class="v">Phase 1.2 — commercial packaging</div></div>
     <div class="card"><div class="k">Deploy</div><div class="v"><a href="https://furniture-platform-v2.pages.dev">production</a></div></div>
   </div>
 
@@ -61,7 +61,7 @@
 
   <div class="section">
     <h2>Фазы V2</h2>
-    <div class="phase"><div class="name">Фаза 1 — Коммерческая упаковка</div><div class="right"><span class="badge active">в работе</span><div class="bar"><span style="width:20%"></span></div><span class="pct">20%</span></div></div>
+    <div class="phase"><div class="name">Фаза 1 — Коммерческая упаковка</div><div class="right"><span class="badge done">завершена</span><div class="bar"><span style="width:100%"></span></div><span class="pct">100%</span></div></div>
     <div class="phase"><div class="name">Фаза 2 — Управляемый визуал</div><div class="right"><span class="badge idle">не начата</span><div class="bar"><span style="width:0%"></span></div><span class="pct">0%</span></div></div>
     <div class="phase"><div class="name">Фаза 3 — PDF intake</div><div class="right"><span class="badge idle">не начата</span><div class="bar"><span style="width:0%"></span></div><span class="pct">0%</span></div></div>
     <div class="phase"><div class="name">Фаза 4 — Supplier-aware pricing</div><div class="right"><span class="badge idle">не начана</span><div class="bar"><span style="width:0%"></span></div><span class="pct">0%</span></div></div>
@@ -73,10 +73,10 @@
     <table>
       <thead><tr><th>Проверка</th><th>Статус</th><th>Дата</th></tr></thead>
       <tbody>
-        <tr><td>Миграции Фазы 1 (0001)</td><td><span class="badge done">✅ local + remote</span></td><td>2026-06-28</td></tr>
-        <tr><td>Package lifecycle smoke</td><td><span class="badge done">✅ 64/64</span></td><td>2026-06-28</td></tr>
-        <tr><td>Production API smoke</td><td><span class="badge done">✅ GET /api/packages 200</span></td><td>2026-06-28</td></tr>
-        <tr><td>Analytics pipeline smoke</td><td class="muted">—</td><td class="muted">—</td></tr>
+        <tr><td>Миграции Фазы 1 (0001, 0002)</td><td><span class="badge done">✅ local + remote</span></td><td>2026-06-28</td></tr>
+        <tr><td>Package lifecycle smoke</td><td><span class="badge done">✅ 104/104</span></td><td>2026-06-28</td></tr>
+        <tr><td>Production API smoke</td><td><span class="badge done">✅ packages, templates, analytics</span></td><td>2026-06-28</td></tr>
+        <tr><td>Analytics pipeline smoke</td><td><span class="badge done">✅ funnel + metrics</span></td><td>2026-06-28</td></tr>
       </tbody>
     </table>
   </div>
@@ -89,6 +89,7 @@
         <tr><td>2026-06-28</td><td>Подготовка</td><td>Инициализация репозитория V2, roadmap, чек-лист, файлы прогресса</td><td>Репозиторий готов к началу Фазы 1</td></tr>
         <tr><td>2026-06-28</td><td>Фаза 1.1</td><td>product/package model: миграция 0001, catalog/store/credit core, API routes, smoke 64/64</td><td>Phase 1.1 завершён</td></tr>
         <tr><td>2026-06-28</td><td>Деплой</td><td>D1 remote миграция, Pages project создан, ADMIN_TOKEN секрет, импорт-фикс</td><td>Production: furniture-platform-v2.pages.dev, API 200</td></tr>
+        <tr><td>2026-06-28</td><td>Фаза 1.2</td><td>message templates, payment store, analytics, admin UI, миграция 0002</td><td>Фаза 1 завершена, smoke 104/104</td></tr>
       </tbody>
     </table>
   </div>

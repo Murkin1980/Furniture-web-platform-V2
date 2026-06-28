@@ -7,6 +7,8 @@
 
 Цель: платные проектные пакеты 10 000 тг и 20 000 тг становятся штатной частью sales flow.
 
+**Статус: завершена ✅**
+
 ### 1.1 Product/Package model и CRM states
 - [x] Спроектировать сущности `engagementLevel`, `servicePackage`, `creditedOnOrder`, `proposalDepth`, `revisionRound`, `sourceMaterialType`, `upgradeOfferState`, `visualState`
 - [x] Миграция БД: таблицы пакетов, продуктовых уровней, зачёта в заказ
@@ -14,21 +16,21 @@
 - [x] Backend: credit-on-order policy (стоимость пакета зачитывается в заказ)
 
 ### 1.2 Коммерческая упаковка пакетов
-- [ ] Шаблоны клиентских сообщений для upsell (rough quote → 10k → 20k → order)
-- [ ] Новые статусы в CRM для отслеживания пакетов
-- [ ] Менеджерский UI выбора платного пакета вместо «сделать КП»
-- [ ] Платёжная привязка пакета к заказу (учёт оплаты пакета)
+- [x] Шаблоны клиентских сообщений для upsell (rough quote → 10k → 20k → order)
+- [x] Новые статусы в CRM для отслеживания пакетов
+- [x] Менеджерский UI выбора платного пакета вместо «сделать КП»
+- [x] Платёжная привязка пакета к заказу (учёт оплаты пакета)
 
 ### 1.3 Аналитика конверсии пакетов
-- [ ] Метрики: rough quote → 10k, 10k → 20k, paid packages → order
-- [ ] Метрики: среднее время подготовки пакета, правок на пакет, доля зачтённых в заказ
-- [ ] Дашборд конверсии воронки вовлечения
+- [x] Метрики: rough quote → 10k, 10k → 20k, paid packages → order
+- [x] Метрики: среднее время подготовки пакета, правок на пакет, доля зачтённых в заказ
+- [x] Дашборд конверсии воронки вовлечения
 
 ### 1.4 Smoke и проверки фазы 1
 - [x] Миграции применены (local + remote D1)
-- [x] Package lifecycle smoke (create → pay → credit-on-order → order) — 64/64 passed
-- [x] Production API smoke (GET /api/packages 200)
-- [ ] Analytics pipeline smoke
+- [x] Package lifecycle smoke (create → pay → credit-on-order → order) — 104/104 passed
+- [x] Production API smoke (packages, templates, analytics — 200)
+- [x] Analytics pipeline smoke
 - [x] README и PROJECT_PROGRESS обновлены
 
 ## Фаза 2 — Управляемый визуал

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Платформа V2 — Админка</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f6f9; --surface: #ffffff; --ink: #212529; --muted: #6c757d;
+      --line: #dee2e6; --primary: #315c78; --primary-dark: #244659;
+      --danger: #9b3a34; --ok: #4f765e; --accent: #4f8cff; --warn: #f59e0b;
+      --sidebar: #1f242e; --sidebar-ink: #e7ecf3;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: "Golos Text", Arial, sans-serif; color: var(--ink); background: var(--bg); display: flex; }
+    aside {
+      width: 240px; min-height: 100vh; background: var(--sidebar); color: var(--sidebar-ink);
+      padding: 20px 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    aside .logo { padding: 0 20px 20px; font-size: 18px; font-weight: 700; border-bottom: 1px solid #2a313d; margin-bottom: 12px; }
+    aside nav a {
+      display: block; padding: 11px 20px; color: var(--sidebar-ink); text-decoration: none;
+      font-size: 14px; cursor: pointer; border-left: 3px solid transparent;
+    }
+    aside nav a:hover { background: rgba(255,255,255,.06); }
+    aside nav a.active { background: rgba(79,140,255,.12); border-left-color: var(--accent); }
+    main { flex: 1; padding: 24px 28px; min-width: 0; }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    h2 { margin: 24px 0 10px; font-size: 17px; }
+    .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    .stat .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .stat .v { font-size: 24px; font-weight: 700; margin-top: 6px; }
+    .stat .v small { font-size: 13px; font-weight: 400; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f0f2f5; font-size: 12px; text-transform: uppercase; color: var(--muted); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.offered { background: #e3eaf5; color: #315c78; }
+    .badge.accepted { background: #fff3e0; color: #b8860b; }
+    .badge.paid { background: #e8f5e9; color: #4f765e; }
+    .badge.in_progress { background: #e3f2fd; color: #1565c0; }
+    .badge.delivered { background: #f3e5f5; color: #7b1fa2; }
+    .badge.credited { background: #e8f5e9; color: #2e7d32; }
+    .badge.declined { background: #ffebee; color: #c62828; }
+    .badge.pending { background: #fff3e0; color: #b8860b; }
+    .badge.confirmed { background: #e8f5e9; color: #2e7d32; }
+    .badge.cancelled { background: #ffebee; color: #c62828; }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+    input, select, textarea, button {
+      min-height: 38px; border: 1px solid var(--line); border-radius: 6px;
+      padding: 8px 10px; font: inherit; background: #fff; color: var(--ink);
+    }
+    textarea { width: 100%; min-height: 100px; resize: vertical; }
+    button { border-color: var(--primary); background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #fff; color: var(--primary); }
+    button.danger { border-color: var(--danger); background: var(--danger); }
+    button:disabled { opacity: .6; cursor: wait; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+    .row > * { flex: 1; min-width: 160px; }
+    .pkg-card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+    .pkg-card h3 { margin: 0 0 6px; font-size: 16px; }
+    .pkg-card .price { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .pkg-card .free { color: var(--ok); }
+    .pkg-card ul { margin: 8px 0; padding-left: 20px; color: var(--muted); font-size: 13px; }
+    .pkg-card .credit { font-size: 12px; color: var(--warn); margin-top: 6px; }
+    .hidden { display: none; }
+    .status-line { min-height: 24px; margin-bottom: 12px; font-size: 14px; }
+    .status-line.bad { color: var(--danger); }
+    .status-line.ok { color: var(--ok); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal { background: var(--surface); border-radius: 12px; padding: 24px; max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { margin-top: 0; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <aside>
+    <div class="logo">Платформа V2</div>
+    <nav id="nav">
+      <a data-view="packages" class="active">Пакеты</a>
+      <a data-view="engagements">Engagements</a>
+      <a data-view="payments">Платежи</a>
+      <a data-view="templates">Шаблоны сообщений</a>
+      <a data-view="analytics">Аналитика</a>
+    </nav>
+  </aside>
+  <main>
+    <h1 id="view-title">Пакеты</h1>
+    <p class="sub" id="view-sub">Каталог продуктовых пакетов V2</p>
+    <div id="status" class="status-line"></div>
+    <div id="view-packages" class="view">
+      <div id="package-list"></div>
+    </div>
+    <div id="view-engagements" class="view hidden">
+      <div class="row" style="margin-bottom:16px">
+        <label>Order ID<input type="number" id="eng-order-id" min="1" placeholder="№ заказа" /></label>
+        <button id="btn-load-engagements">Загрузить</button>
+        <button id="btn-create-engagement" class="secondary">Создать engagement</button>
+      </div>
+      <div id="engagement-list"></div>
+    </div>
+    <div id="view-payments" class="view hidden">
+      <div class="row" style="margin-bottom:16px">
+        <label>Engagement ID<input type="number" id="pay-engagement-id" min="1" placeholder="№ engagement" /></label>
+        <button id="btn-load-payments">Загрузить</button>
+      </div>
+      <div id="payment-list"></div>
+    </div>
+    <div id="view-templates" class="view hidden">
+      <div class="row" style="margin-bottom:16px">
+        <label>Engagement Level
+          <select id="tpl-from-level">
+            <option value="rough_quote">rough_quote</option>
+            <option value="package_a">package_a</option>
+            <option value="package_b">package_b</option>
+            <option value="production_order">production_order</option>
+          </select>
+        </label>
+        <button id="btn-load-templates">Показать шаблоны</button>
+      </div>
+      <div id="template-list"></div>
+    </div>
+    <div id="view-analytics" class="view hidden">
+      <button id="btn-load-analytics">Загрузить аналитику</button>
+      <div id="analytics-content"></div>
+    </div>
+  </main>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal" id="modal-body"></div>
+  </div>
+  <script type="module" src="/admin.js"></script>
+</body>
+</html>

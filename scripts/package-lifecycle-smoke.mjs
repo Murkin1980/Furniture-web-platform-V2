@@ -30,6 +30,26 @@ import {
   listOrderEngagements,
   getEngagement
 } from "../src/packages/package-store.js";
+import {
+  MESSAGE_TEMPLATE_CODES,
+  listMessageTemplates,
+  getTemplatesForUpgrade,
+  resolveUpgradeTemplates,
+  getMessageTemplate,
+  renderTemplate
+} from "../src/packages/message-templates.js";
+import {
+  getConversionFunnel,
+  getPackageMetrics,
+  recordUpgradeOffer
+} from "../src/packages/package-analytics.js";
+import {
+  createPayment,
+  confirmPayment,
+  cancelPayment,
+  listEngagementPayments,
+  getPayment
+} from "../src/packages/payment-store.js";
 
 let passed = 0;
 let failed = 0;
@@ -115,7 +135,11 @@ function normalizeRow(row) {
 }
 
 function loadMigrationSql() {
-  return readFileSync(new URL("../migrations/0001_packages.sql", import.meta.url), "utf8");
+  const dir = new URL("../migrations/", import.meta.url);
+  return [
+    readFileSync(new URL("0001_packages.sql", dir), "utf8"),
+    readFileSync(new URL("0002_package_payments.sql", dir), "utf8")
+  ].join("\n");
 }
 
 console.log("Package catalog smoke");
@@ -286,6 +310,122 @@ console.log("Conversion events smoke");
   assertEqual(events.results[0].eventType, "package_offered", "event type is package_offered");
   assertEqual(events.results[0].fromLevel, "rough_quote", "from_level is rough_quote");
   assertEqual(events.results[0].toLevel, "package_a", "to_level is package_a");
+
+  sqlite.close();
+}
+
+console.log("Message templates smoke");
+{
+  const templates = listMessageTemplates();
+  assert(templates.length >= 5, "at least 5 templates exist");
+
+  const roughQuoteTemplates = getTemplatesForUpgrade(ENGAGEMENT_LEVELS.ROUGH_QUOTE);
+  assert(roughQuoteTemplates.length >= 2, "rough_quote has at least 2 upgrade templates");
+
+  const packageATemplates = getTemplatesForUpgrade(ENGAGEMENT_LEVELS.PACKAGE_A);
+  assert(packageATemplates.length >= 2, "package_a has at least 2 upgrade templates (package_b + order)");
+
+  const toB = packageATemplates.find((t) => t.toPackage === PACKAGE_CODES.PACKAGE_B);
+  assert(!!toB, "package_a has template to package_b");
+  assertEqual(toB.code, MESSAGE_TEMPLATE_CODES.PACKAGE_A_OFFER_PACKAGE_B, "package_a -> package_b template code");
+
+  const toOrder = packageATemplates.find((t) => t.toPackage === null);
+  assert(!!toOrder, "package_a has template to order");
+  assertEqual(toOrder.code, MESSAGE_TEMPLATE_CODES.PACKAGE_A_OFFER_ORDER, "package_a -> order template code");
+
+  const resolved = resolveUpgradeTemplates(ENGAGEMENT_LEVELS.PACKAGE_B, PACKAGE_CODES.PACKAGE_B);
+  assert(resolved.length >= 1, "package_b resolves order templates");
+  assertEqual(resolved[0].toPackage, null, "package_b resolved template leads to order");
+
+  const rendered = renderTemplate(toB, { clientName: "Иван", orderId: "42", managerName: "Анна" });
+  assert(rendered.body.includes("Здравствуйте, Иван!"), "rendered template includes client name");
+  assert(rendered.body.includes("#42"), "rendered template includes order id");
+  assert(rendered.body.includes("Анна"), "rendered template includes manager name");
+
+  const notFound = getMessageTemplate("nonexistent");
+  assertEqual(notFound, null, "nonexistent template returns null");
+
+  const roughResolve = resolveUpgradeTemplates(ENGAGEMENT_LEVELS.ROUGH_QUOTE, null);
+  assert(roughResolve.length >= 2, "rough_quote with no package resolves all rough_quote templates");
+}
+
+console.log("Payment store smoke");
+{
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(loadMigrationSql());
+  const db = makeD1(sqlite);
+
+  const clientInsert = await db.prepare("INSERT INTO clients (name) VALUES (?)").bind("Платёж Тест").run();
+  const orderInsert = await db.prepare("INSERT INTO orders (client_id) VALUES (?)").bind(clientInsert.meta.last_row_id).run();
+  const orderId = orderInsert.meta.last_row_id;
+
+  const created = await createEngagement({ db, orderId, packageCode: PACKAGE_CODES.PACKAGE_A });
+  const engagementId = created.body.item.id;
+
+  const invalidAmount = await createPayment({ db, engagementId, amountKzt: 0 });
+  assert(!invalidAmount.ok, "payment with 0 amount fails");
+  assertEqual(invalidAmount.status, 400, "invalid amount returns 400");
+
+  const payment = await createPayment({ db, engagementId, amountKzt: 10000, method: "kaspi", reference: "KASPI-001" });
+  assert(payment.ok, "createPayment succeeds");
+  assertEqual(payment.status, 201, "createPayment returns 201");
+  assertEqual(payment.body.item.status, "pending", "new payment is pending");
+  assertEqual(payment.body.item.amountKzt, 10000, "payment amount 10000");
+  assertEqual(payment.body.item.method, "kaspi", "payment method kaspi");
+
+  const paymentId = payment.body.item.id;
+
+  const listResult = await listEngagementPayments({ db, engagementId });
+  assert(listResult.ok, "listEngagementPayments succeeds");
+  assertEqual(listResult.body.items.length, 1, "engagement has 1 payment");
+
+  const confirmResult = await confirmPayment({ db, paymentId });
+  assert(confirmResult.ok, "confirmPayment succeeds");
+  assertEqual(confirmResult.body.item.status, "confirmed", "payment is confirmed");
+  assert(!!confirmResult.body.item.confirmedAt, "confirmedAt is set");
+
+  const updatedEngagement = await getEngagement({ db, engagementId });
+  assertEqual(updatedEngagement.body.item.status, ENGAGEMENT_STATUS.PAID, "engagement auto-transitions to paid after confirm");
+
+  const doubleConfirm = await confirmPayment({ db, paymentId });
+  assert(doubleConfirm.ok, "double confirm is idempotent");
+
+  const createdB = await createEngagement({ db, orderId, packageCode: PACKAGE_CODES.PACKAGE_B });
+  const cancelledPayment = await createPayment({ db, engagementId: createdB.body.item.id, amountKzt: 5000 });
+  const cancelResult = await cancelPayment({ db, paymentId: cancelledPayment.body.item.id });
+  assert(cancelResult.ok, "cancelPayment succeeds");
+  assertEqual(cancelResult.body.item.status, "cancelled", "payment is cancelled");
+
+  const notFound = await getPayment({ db, paymentId: 999999 });
+  assert(!notFound.ok, "getPayment 999999 returns not found");
+  assertEqual(notFound.status, 404, "not found returns 404");
+
+  sqlite.close();
+}
+
+console.log("Analytics smoke");
+{
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(loadMigrationSql());
+  const db = makeD1(sqlite);
+
+  for (let i = 0; i < 3; i += 1) {
+    const ci = await db.prepare("INSERT INTO clients (name) VALUES (?)").bind(`Клиент ${i + 1}`).run();
+    const oi = await db.prepare("INSERT INTO orders (client_id, engagement_level) VALUES (?, 'rough_quote')").bind(ci.meta.last_row_id).run();
+    await createEngagement({ db, orderId: oi.meta.last_row_id, packageCode: PACKAGE_CODES.PACKAGE_A });
+  }
+
+  const funnelResult = await getConversionFunnel({ db });
+  assert(funnelResult.ok, "getConversionFunnel succeeds");
+  assertEqual(funnelResult.body.funnel.length, 4, "funnel has 4 stages");
+  assert(funnelResult.body.funnel[0].count >= 3, "funnel rough_quote count >= 3");
+  assert(funnelResult.body.transitions.length >= 3, "at least 3 transitions");
+
+  const metricsResult = await getPackageMetrics({ db });
+  assert(metricsResult.ok, "getPackageMetrics succeeds");
+  assert((metricsResult.body.totals.totalEngagements || 0) >= 3, "metrics totalEngagements >= 3");
+  assert((metricsResult.body.totals.offered || 0) >= 3, "metrics offered >= 3");
+  assertEqual(metricsResult.body.byPackage.length, 1, "metrics byPackage has 1 package (package_a)");
 
   sqlite.close();
 }

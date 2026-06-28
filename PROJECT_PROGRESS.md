@@ -8,11 +8,11 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 
 | Параметр | Значение |
 |---|---|
-| Этап | Фаза 1 — Коммерческая упаковка |
-| Процент готовности | 20% |
-| Последний commit | 1bc1571 — fix import depth |
+| Этап | Фаза 1 — Коммерческая упаковка (завершена) |
+| Процент готовности | 100% фазы 1 |
+| Последний commit | (этот коммит: Phase 1.2 commercial packaging) |
 | Deploy | production: https://furniture-platform-v2.pages.dev |
-| Следующий шаг | 1.2 Коммерческая упаковка пакетов: шаблоны сообщений, менеджерский UI |
+| Следующий шаг | Фаза 2 — Управляемый визуал (BW/Color deliverables) |
 
 ## Архитектурные решения V2
 
@@ -25,11 +25,11 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 ## Прогресс по фазам
 
 ### Фаза 1 — Коммерческая упаковка
-- Статус: в работе
-- 1.1 Product/Package model и CRM states — 100% (завершён)
-- 1.2 Коммерческая упаковка пакетов — 0%
-- 1.3 Аналитика конверсии пакетов — 0%
-- 1.4 Smoke и проверки — 40% (package lifecycle smoke пройден, analytics pending)
+- Статус: завершена ✅
+- 1.1 Product/Package model и CRM states — 100%
+- 1.2 Коммерческая упаковка пакетов — 100%
+- 1.3 Аналитика конверсии пакетов — 100%
+- 1.4 Smoke и проверки — 100% (104/104, production API 200)
 
 ### Фаза 2 — Управляемый визуал
 - Статус: не начата — 0%
@@ -50,15 +50,16 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 | 2026-06-28 | Подготовка | Инициализация репозитория V2, roadmap, чек-лист, файлы прогресса | Репозиторий готов к началу Фазы 1 |
 | 2026-06-28 | Фаза 1.1 | product/package model: миграция 0001, catalog/store/credit core, API routes, smoke 64/64 | Phase 1.1 завершён |
 | 2026-06-28 | Деплой | D1 remote миграция, Pages project создан, ADMIN_TOKEN секрет, импорт-фикс | Production: furniture-platform-v2.pages.dev, API 200 |
+| 2026-06-28 | Фаза 1.2 | message templates, payment store, analytics, admin UI, миграция 0002 | Фаза 1 завершена, smoke 104/104 |
 
 ## Проверки
 
 | Проверка | Статус | Дата |
 |---|---|---|
-| Миграции Фазы 1 (0001) | ✅ local + remote | 2026-06-28 |
-| Package lifecycle smoke | ✅ 64/64 | 2026-06-28 |
-| Production API smoke | ✅ GET /api/packages 200 | 2026-06-28 |
-| Analytics pipeline smoke | — | — |
+| Миграции Фазы 1 (0001, 0002) | ✅ local + remote | 2026-06-28 |
+| Package lifecycle smoke | ✅ 104/104 | 2026-06-28 |
+| Production API smoke | ✅ packages, templates, analytics — 200 | 2026-06-28 |
+| Analytics pipeline smoke | ✅ funnel + metrics | 2026-06-28 |
 
 ## Риски и запреты
 
