@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Cloudflare / Wrangler
+.wrangler/
+.dev.vars
+.env
+.env.local
+
+# Build output
+dist/
+output/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Working docs (не коммитить автоматически, см. AGENTS.md)
+*-wip-handoff.md
+*-coding-brief.md
+SESSION_NOTES.md
