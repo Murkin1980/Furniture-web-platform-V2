@@ -88,7 +88,7 @@
 - [ ] Conversation-to-order matching
 - [x] AI package advisor (deterministic + AI-ready) — `src/ai/package-advisor.js`, classifyIntent, suggestClarifyingQuestions, getAdvisorSummary, 35/35 smoke
 - [ ] AI draft replies (без автоотправки)
-- [ ] AI audit logs (ai_runs, ai_actions, ai_feedback)
+- [x] AI audit logs (ai_runs, ai_actions, ai_feedback) — migration 0006, `src/ai/ai-observability.js`, CRUD + lifecycle, 58/58 smoke
 - [ ] Manager feedback loop
 - [ ] Package conversion analytics через WhatsApp
 - [ ] Smoke: webhook → normalize → conversation → advisor → draft → manager approve
