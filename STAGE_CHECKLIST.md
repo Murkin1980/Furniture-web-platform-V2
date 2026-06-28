@@ -84,8 +84,8 @@
 
 Цель: WhatsApp/AI как безопасный слой продаж без автоответов.
 
-- [ ] WhatsApp inbox (входящие, привязка к conversation)
-- [ ] Conversation-to-order matching
+- [x] WhatsApp inbox (входящие, привязка к conversation) — migration 0007, normalize-message, conversation-store, webhook endpoint, 56/56 smoke
+- [x] Conversation-to-order matching — linkToOrder, linkToClient in conversation-store
 - [x] AI package advisor (deterministic + AI-ready) — `src/ai/package-advisor.js`, classifyIntent, suggestClarifyingQuestions, getAdvisorSummary, 35/35 smoke
 - [ ] AI draft replies (без автоотправки)
 - [x] AI audit logs (ai_runs, ai_actions, ai_feedback) — migration 0006, `src/ai/ai-observability.js`, CRUD + lifecycle, 58/58 smoke

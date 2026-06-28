@@ -100,6 +100,54 @@ console.log("\nPackage advisor — confidence scoring");
   assert(c3.confidence >= 0, "weak signal -> low confidence");
 }
 
+console.log("\nPackage advisor — Package C candidate detection");
+
+{
+  const p1 = classifyIntent("нужна 3d модель в формате sketchup");
+  assertEqual(p1.packageCode, "package_c_candidate", "sketchup -> package_c_candidate");
+  assert(p1.matchedKeywords.includes("sketchup"), "matched sketchup keyword");
+
+  const p2 = classifyIntent("скиньте мне obj файлы для дизайнера");
+  assertEqual(p2.packageCode, "package_c_candidate", "obj + designer -> package_c_candidate");
+
+  const p3 = classifyIntent("хочу glb модель кухни");
+  assertEqual(p3.packageCode, "package_c_candidate", "glb -> package_c_candidate");
+
+  const p4 = classifyIntent("нужен 3d-файл для подрядчика");
+  assertEqual(p4.packageCode, "package_c_candidate", "3d-файл -> package_c_candidate");
+
+  const p5 = classifyIntent("fbx модель мебели");
+  assertEqual(p5.packageCode, "package_c_candidate", "fbx -> package_c_candidate");
+
+  const q1 = suggestClarifyingQuestions(
+    { packageCode: "package_c_candidate", confidence: 0.9 },
+    {}
+  );
+  assert(q1.length >= 1, "Package C without format gets format question");
+  assertEqual(q1[0].field, "format", "first question is about format");
+
+  const q2 = suggestClarifyingQuestions(
+    { packageCode: "package_c_candidate", confidence: 0.9 },
+    { has3dFiles: true }
+  );
+  assert(q2.length === 1, "Package C with has3dFiles gets only target_user question");
+  assertEqual(q2[0].field, "target_user", "remaining question is about target_user");
+
+  const q3 = suggestClarifyingQuestions(
+    { packageCode: "package_c_candidate", confidence: 0.9 },
+    { has3dFiles: true, targetUser: "designer" }
+  );
+  assertEqual(q3.length, 0, "Package C with has3dFiles+targetUser gets no questions");
+
+  const s1 = getAdvisorSummary({
+    packageCode: "package_c_candidate",
+    confidence: 0.85,
+    reason: "strong_match",
+    matchedKeywords: ["sketchup", "3d файл"]
+  });
+  assert(s1.recommended.includes("package_c_candidate"), "summary contains package_c_candidate");
+}
+
 console.log("\nPackage advisor — suggestClarifyingQuestions");
 
 {

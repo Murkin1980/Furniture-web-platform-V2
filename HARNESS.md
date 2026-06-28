@@ -14,14 +14,14 @@
 - Любое изменение должно сохранять ориентацию на реальный мебельный workflow, а не на абстрактную demo-архитектуру.
 
 ## Архитектурный контекст
-Текущий целевой стек проекта:
-- Cloudflare Workers + Hono
-- TypeScript
-- Cloudflare D1
-- Cloudflare R2
-- Astro для публичных сайтов и связанных витринных контуров, где это применимо.[cite:12][cite:16]
+Текущий стек проекта:
+- Cloudflare Pages Functions (vanilla ESM, без build step)
+- Cloudflare D1 (SQLite)
+- Cloudflare R2 (хранилище файлов)
+- Vanilla JavaScript (ES modules, без TypeScript, без bundler)
+- Node.js 22 + `node:sqlite` для smoke-тестов
 
-Система строится вокруг orchestration layer, который сначала классифицирует тип входа и определяет, какой инструмент платформы должен быть вызван дальше: AI extraction, OCR/sketch recognition, PDF intelligence, calculators, CRM bridge, proposal generation и другие специализированные модули.[cite:16]
+Система строится вокруг orchestration layer, который сначала классифицирует тип входа и определяет, какой инструмент платформы должен быть вызван дальше: AI extraction, PDF intelligence, calculators, proposal generation и другие специализированные модули.
 
 ## Основные домены системы
 Ключевые домены, которые нужно понимать перед изменениями:
@@ -36,13 +36,16 @@
 
 ## Разрешённая зона изменений
 Без дополнительного подтверждения разрешено изменять только:
-- `src/orchestration/**`
-- `src/intake/**`
+- `src/packages/**`
+- `src/pdf/**`
+- `src/suppliers/**`
 - `src/ai/**`
-- `src/shared/**`
+- `src/whatsapp/**`
+- `functions/api/**`
+- `migrations/**`
+- `scripts/**`
 - `tests/**`
 - `docs/**`
-- `migrations/dev/**`
 
 Только после явного подтверждения можно изменять:
 - production deployment config
@@ -63,17 +66,18 @@
 - менять публичные контракты API без фиксации этого в docs и tests.[cite:13][cite:14]
 
 ## Ожидаемая структура модулей
-Ожидаемые каталоги и их роли:
-- `src/orchestration/` — маршрутизация входов, policy, state transitions, workflow control.
-- `src/intake/` — нормализация входных данных и первичная подготовка payload.
-- `src/ai/` — классификация, извлечение структуры, генерация уточнений.
-- `src/calculators/` — расчётные модули.
-- `src/crm/` — интеграция с CRM и смежными бизнес-потоками.
-- `src/documents/` или `src/proposals/` — генерация КП и документов.
-- `src/process/` или `src/tracking/` — timeline, progress, audit trail.
-- `tests/` — unit, integration, flow tests.
+Фактическая структура проекта:
+- `src/packages/` — пакеты услуг, кредитование, аналитика, шаблоны, статусы, deliverables.
+- `src/pdf/` — PDF intake, манифесты, черновики, размеры, КП из PDF.
+- `src/suppliers/` — каталог поставщиков, версионные прайс-листы, расчёт сметы.
+- `src/ai/` — AI package advisor, AI observability (ai_runs, ai_actions, ai_feedback).
+- `src/whatsapp/` — WhatsApp inbound, нормализация, переписки (после Phase 4.5).
+- `functions/api/` — API routes (Cloudflare Pages Functions).
+- `migrations/` — D1 SQL миграции (0001–0006).
+- `scripts/` — smoke-тесты (`package-lifecycle-smoke.mjs`, `supplier-smoke.mjs`, `package-advisor-smoke.mjs`, `ai-observability-smoke.mjs`).
+- `public/` — статические файлы и admin UI.
 
-Если в репозитории фактическая структура отличается, нужно следовать реальной структуре проекта, но не размывать границы доменов без причины.
+Границы доменов не размывать без причины. При расширении системы — следовать реальной структуре.
 
 ## Рабочий режим AI-кодера
 Для каждой задачи соблюдать порядок:
@@ -126,31 +130,29 @@
 Если меняется orchestration flow, нужно добавить хотя бы один сценарный тест на новый маршрут.
 
 ## Команды проекта
-Ниже должны поддерживаться или быть адаптированы реальные команды репозитория:
+Фактические команды репозитория:
 
 Установка:
 - `npm install`
 
 Разработка:
-- `npm run dev`
+- `npm run dev` (wrangler pages dev)
 
-Линт:
-- `npm run lint`
+Проверка синтаксиса всех модулей:
+- `npm run check` (node --check по всем src/ и functions/)
 
-Проверка типов:
-- `npm run typecheck`
+Smoke-тесты:
+- `npm run smoke:packages` — lifecycle пакетов (318 assertions)
+- `npm run smoke:suppliers` — поставщики и прайс-листы (79 assertions)
+- `npm run smoke:advisor` — AI package advisor (35 assertions)
+- `npm run smoke:ai` — AI observability (58 assertions)
 
-Тесты:
-- `npm test`
+Деплой:
+- `npm run deploy` (wrangler pages deploy)
 
-Таргетированные тесты:
-- `npm test -- orchestration`
-- `npm test -- intake`
-
-Локальный Cloudflare runtime:
-- `npx wrangler dev`
-
-Если в проекте реальные команды отличаются, нужно обновить этот раздел сразу после стабилизации toolchain.[cite:32][cite:36]
+Деплой миграций:
+- `npm run db:migrate:local` — локальные миграции D1
+- `npm run db:migrate:remote` — production миграции D1
 
 ## Definition of Done
 Задача считается завершённой только если:
