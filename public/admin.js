@@ -65,7 +65,8 @@ function switchView(viewName) {
     payments: ["Платежи", "Платёжные записи пакетов"],
     templates: ["Шаблоны сообщений", "Upsell-шаблоны для переходов между пакетами"],
     analytics: ["Аналитика", "Конверсия воронки вовлечения"],
-    visual: ["Визуал (Deliverables)", "Продуктовый стандарт выдачи результата"]
+    visual: ["Визуал (Deliverables)", "Продуктовый стандарт выдачи результата"],
+    pdf: ["PDF Intake", "Полуавтоматическое проектирование из клиентских PDF"]
   };
   const [title, sub] = titles[viewName] || ["", ""];
   document.getElementById("view-title").textContent = title;
@@ -423,5 +424,108 @@ async function loadDeliverableState() {
 document.getElementById("btn-load-deliverables").onclick = loadDeliverables;
 document.getElementById("btn-seed-deliverables").onclick = seedDeliverables;
 document.getElementById("btn-deliverable-state").onclick = loadDeliverableState;
+
+async function loadPdf() {
+  const orderId = document.getElementById("pdf-order-id").value;
+  if (!orderId) return showStatus("Введите Order ID", "bad");
+  const [uploads, drafts] = await Promise.all([
+    api(`/orders/${orderId}/pdf/uploads`),
+    api(`/orders/${orderId}/pdf/drafts`)
+  ]);
+  if (uploads.ok) renderPdfUploads(uploads.data.items || []);
+  if (drafts.ok) renderPdfDrafts(drafts.data.items || []);
+  showStatus(`Uploads: ${uploads.data.items?.length || 0}, Drafts: ${drafts.data.items?.length || 0}`, "ok");
+}
+
+function renderPdfUploads(items) {
+  const el = document.getElementById("pdf-upload-list");
+  if (!items.length) { el.innerHTML = "<p class='sub'>Нет загрузок PDF</p>"; return; }
+  el.innerHTML = `<table><thead><tr><th>ID</th><th>Файл</th><th>Страниц</th><th>Статус</th><th>Дата</th></tr></thead>
+    <tbody>${items.map((u) => `<tr><td>${u.id}</td><td>${esc(u.fileName)}</td><td>${u.pageCount}</td><td>${showBadge(u.status)}</td><td>${esc(u.createdAt||"")}</td></tr>`).join("")}</tbody></table>`;
+}
+
+function renderPdfDrafts(items) {
+  const el = document.getElementById("pdf-draft-list");
+  if (!items.length) { el.innerHTML = "<p class='sub'>Нет drafts. Создайте draft из manifest.</p>"; return; }
+  el.innerHTML = `<table><thead><tr><th>ID</th><th>Статус</th><th>Страниц</th><th>Zones</th><th>AI</th><th>Действия</th></tr></thead>
+    <tbody>${items.map((d) => {
+      const zoneCount = (d.manifest?.pages || []).reduce((s, p) => s + (p.furnitureZones?.length || 0), 0) + (d.manifest?.rooms || []).reduce((s, r) => s + (r.furnitureZones?.length || 0), 0);
+      return `<tr><td>${d.id}</td><td>${showBadge(d.status)}</td><td>${d.manifest?.pageCount || 0}</td><td>${zoneCount}</td><td>${esc(d.aiProvider||"—")}</td>
+        <td>
+          <button class="secondary" onclick="window._pdfDraftAction(${d.id},'dimensions')">Размеры</button>
+          <button class="secondary" onclick="window._pdfDraftAction(${d.id},'proposal')">КП</button>
+          <button class="secondary" onclick="window._pdfReviewDraft(${d.id},'approved')">Approve</button>
+          <button class="secondary" onclick="window._pdfReviewDraft(${d.id},'rejected')">Reject</button>
+        </td></tr>`;
+    }).join("")}</tbody></table>`;
+}
+
+window._pdfDraftAction = async (draftId, action) => {
+  const { ok, data } = await api(`/orders/0/pdf/drafts?draftId=${draftId}&action=${action}`);
+  if (!ok) return showStatus(data.message || "Ошибка", "bad");
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `<h2>Draft #${draftId} — ${action}</h2>
+    <pre style="white-space:pre-wrap;font-size:12px;max-height:400px;overflow:auto;background:#f4f6f9;padding:12px;border-radius:8px">${esc(JSON.stringify(data, null, 2))}</pre>
+    <div class="row" style="margin-top:16px"><button class="secondary" onclick="window._closeModal()">Закрыть</button></div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+};
+
+window._pdfReviewDraft = async (draftId, status) => {
+  const note = prompt("Комментарий к review:") || "";
+  const { ok, data } = await api(`/orders/0/pdf/drafts`, { method: "POST", body: { action: "review", draftId, status, reviewNote: note } });
+  if (!ok) return showStatus(data.message || "Ошибка review", "bad");
+  showStatus(`Draft #${draftId} → ${status}`, "ok");
+  loadPdf();
+};
+
+window._uploadPdf = async () => {
+  const orderId = document.getElementById("pdf-order-id").value;
+  if (!orderId) return showStatus("Введите Order ID", "bad");
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `<h2>Загрузить PDF для заказа #${orderId}</h2>
+    <label>Имя файла<input type="text" id="up-fname" placeholder="kitchen-plan.pdf" /></label>
+    <label>Размер (bytes)<input type="number" id="up-fsize" placeholder="2048576" /></label>
+    <label>Кол-во страниц<input type="number" id="up-pages" placeholder="3" /></label>
+    <label>Checksum (optional)<input type="text" id="up-checksum" placeholder="abc123" /></label>
+    <div class="row" style="margin-top:16px"><button id="btn-do-upload">Загрузить</button><button class="secondary" onclick="window._closeModal()">Отмена</button></div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-upload").onclick = async () => {
+    const { ok, data } = await api(`/orders/${orderId}/pdf/uploads`, { method: "POST", body: {
+      fileName: document.getElementById("up-fname").value,
+      fileSizeBytes: Number(document.getElementById("up-fsize").value),
+      mimeType: "application/pdf",
+      pageCount: Number(document.getElementById("up-pages").value),
+      checksum: document.getElementById("up-checksum").value
+    }});
+    if (!ok) return showStatus(data.message || "Ошибка загрузки", "bad");
+    showStatus(`Upload #${data.item.id} создан`, "ok");
+    window._closeModal();
+    loadPdf();
+  };
+};
+
+window._createDraft = async () => {
+  const orderId = document.getElementById("pdf-order-id").value;
+  if (!orderId) return showStatus("Введите Order ID", "bad");
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `<h2>Создать PDF draft для заказа #${orderId}</h2>
+    <p class="sub">Вставьте manifest JSON (или используйте упрощённый формат)</p>
+    <label>Manifest JSON<textarea id="draft-manifest" placeholder='{"document":{"fileName":"test.pdf"},"pageCount":1,"pages":[{"pageNumber":1,"pageType":"floor_plan","furnitureZones":[{"id":"z1","zoneType":"kitchen","label":"Кухня 3м","dimensions":{"widthMm":3000}}]}]}'></textarea></label>
+    <div class="row" style="margin-top:16px"><button id="btn-do-draft">Создать</button><button class="secondary" onclick="window._closeModal()">Отмена</button></div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-draft").onclick = async () => {
+    let manifest;
+    try { manifest = JSON.parse(document.getElementById("draft-manifest").value); } catch { return showStatus("Невалидный JSON", "bad"); }
+    const { ok, data } = await api(`/orders/${orderId}/pdf/drafts`, { method: "POST", body: { manifest } });
+    if (!ok) return showStatus(data.message || "Ошибка создания draft", "bad");
+    showStatus(`Draft #${data.item.id} создан`, "ok");
+    window._closeModal();
+    loadPdf();
+  };
+};
+
+document.getElementById("btn-load-pdf").onclick = loadPdf;
+document.getElementById("btn-upload-pdf").onclick = () => window._uploadPdf();
+document.getElementById("btn-create-draft").onclick = () => window._createDraft();
 
 switchView("packages");

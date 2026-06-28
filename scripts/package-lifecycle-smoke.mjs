@@ -74,6 +74,36 @@ import {
   getPackageDeliverableState,
   canTransitionDeliverable
 } from "../src/packages/deliverable-store.js";
+import {
+  PDF_MANIFEST_VERSION,
+  PDF_PAGE_TYPES,
+  PDF_FURNITURE_ZONE_TYPES,
+  PDF_DRAFT_STATUS,
+  buildProjectPdfManifest,
+  validateProjectPdfManifest,
+  isSupportedPdfFile,
+  generatePdfEstimate,
+  mapPdfEstimateToProposalLines,
+  collectFurnitureZones,
+  extractDimensionsFromManifest,
+  normalizePage,
+  normalizeRoom,
+  normalizeFurnitureZone
+} from "../src/pdf/pdf-manifest.js";
+import {
+  createPdfUpload,
+  listOrderPdfUploads,
+  getPdfUpload,
+  createPdfDraft,
+  getPdfDraft,
+  listOrderPdfDrafts,
+  updatePdfDraftManifest,
+  reviewPdfDraft,
+  generateAndStoreEstimate,
+  getDraftEstimate,
+  getDraftDimensions,
+  getDraftProposalLines
+} from "../src/pdf/pdf-store.js";
 
 let passed = 0;
 let failed = 0;
@@ -163,7 +193,8 @@ function loadMigrationSql() {
   return [
     readFileSync(new URL("0001_packages.sql", dir), "utf8"),
     readFileSync(new URL("0002_package_payments.sql", dir), "utf8"),
-    readFileSync(new URL("0003_deliverables.sql", dir), "utf8")
+    readFileSync(new URL("0003_deliverables.sql", dir), "utf8"),
+    readFileSync(new URL("0004_pdf_intake.sql", dir), "utf8")
   ].join("\n");
 }
 
@@ -619,6 +650,203 @@ console.log("Deliverable state transitions smoke");
   assert(canTransitionDeliverable(DELIVERABLE_STATUS.DELIVERED, DELIVERABLE_STATUS.REVISION_REQUESTED), "delivered -> revision_requested");
   assert(canTransitionDeliverable(DELIVERABLE_STATUS.REVISION_REQUESTED, DELIVERABLE_STATUS.IN_PROGRESS), "revision_requested -> in_progress");
   assert(!canTransitionDeliverable(DELIVERABLE_STATUS.PENDING, DELIVERABLE_STATUS.DELIVERED), "pending -> delivered is blocked");
+}
+
+console.log("PDF manifest smoke");
+{
+  assertEqual(PDF_MANIFEST_VERSION, "project-pdf-manifest/v2", "manifest version is v2");
+  assert(PDF_PAGE_TYPES.includes("floor_plan"), "floor_plan is valid page type");
+  assert(PDF_FURNITURE_ZONE_TYPES.includes("walk_in_closet"), "walk_in_closet is valid zone type");
+  assert(PDF_FURNITURE_ZONE_TYPES.includes("bedroom"), "bedroom is valid zone type (unified V2 enum)");
+  assert(PDF_FURNITURE_ZONE_TYPES.includes("kids"), "kids is valid zone type");
+
+  assert(isSupportedPdfFile("plan.pdf", "application/pdf"), "plan.pdf is supported");
+  assert(!isSupportedPdfFile("plan.jpg", "image/jpeg"), "plan.jpg is not supported");
+
+  const manifest = buildProjectPdfManifest({
+    document: { fileName: "test.pdf", fileSizeBytes: 1024 },
+    pageCount: 2,
+    pages: [
+      { pageNumber: 1, pageType: "floor_plan", confidence: 0.9, furnitureZones: [
+        { id: "z1", zoneType: "kitchen", label: "Кухня", dimensions: { widthMm: 3000, heightMm: 2700, depthMm: 600 } }
+      ]},
+      { pageNumber: 2, pageType: "elevation", confidence: 0.8 }
+    ],
+    rooms: [
+      { id: "r1", label: "Кухня", sourcePages: [1], furnitureZones: [
+        { id: "z1", zoneType: "kitchen", label: "Кухня", dimensions: { widthMm: 3000 } }
+      ]}
+    ]
+  });
+  assertEqual(manifest.manifestVersion, PDF_MANIFEST_VERSION, "built manifest version");
+  assertEqual(manifest.document.fileName, "test.pdf", "manifest fileName");
+  assertEqual(manifest.pageCount, 2, "manifest pageCount");
+  assertEqual(manifest.pages.length, 2, "manifest has 2 pages");
+  assertEqual(manifest.pages[0].pageType, "floor_plan", "page 1 is floor_plan");
+  assertEqual(manifest.pages[0].furnitureZones.length, 1, "page 1 has 1 zone");
+  assertEqual(manifest.pages[0].furnitureZones[0].zoneType, "kitchen", "zone is kitchen");
+  assertEqual(manifest.pages[0].furnitureZones[0].dimensions.widthMm, 3000, "zone width 3000mm");
+  assertEqual(manifest.rooms.length, 1, "manifest has 1 room");
+
+  const validation = validateProjectPdfManifest(manifest);
+  assert(validation.ok, "valid manifest passes validation");
+
+  const invalidManifest = buildProjectPdfManifest({ document: { fileName: "" }, pageCount: 0 });
+  const invalidValidation = validateProjectPdfManifest(invalidManifest);
+  assert(!invalidValidation.ok, "manifest without fileName fails validation");
+
+  const zones = collectFurnitureZones(manifest);
+  assertEqual(zones.length, 1, "collectFurnitureZones dedupes to 1");
+
+  const dims = extractDimensionsFromManifest(manifest);
+  assertEqual(dims.length, 1, "extractDimensions returns 1");
+  assertEqual(dims[0].widthMm, 3000, "dimension width 3000");
+
+  const normalizedPage = normalizePage({ pageNumber: 5, pageType: "unknown_type", confidence: 1.5 });
+  assertEqual(normalizedPage.pageType, "unknown", "unknown page type normalized");
+  assertEqual(normalizedPage.confidence, 1, "confidence clamped to 1");
+}
+
+console.log("PDF estimate smoke");
+{
+  const manifest = buildProjectPdfManifest({
+    document: { fileName: "kitchen.pdf" },
+    pageCount: 1,
+    pages: [{ pageNumber: 1, pageType: "floor_plan", furnitureZones: [
+      { id: "z1", zoneType: "kitchen", label: "Кухня 3м", dimensions: { widthMm: 3000 } },
+      { id: "z2", zoneType: "wardrobe", label: "Шкаф 2м", dimensions: { widthMm: 2000 } }
+    ]}]
+  });
+
+  const estimate = generatePdfEstimate(manifest);
+  assertEqual(estimate.estimateVersion, "pdf-estimate/v2", "estimate version v2");
+  assertEqual(estimate.items.length, 2, "estimate has 2 items");
+  assertEqual(estimate.items[0].furnitureType, "kitchen", "first item is kitchen");
+  assertEqual(estimate.items[0].units, 3, "kitchen 3000mm = 3 units");
+  assert(estimate.totals.subtotal > 0, "subtotal > 0");
+  assert(estimate.totals.total > 0, "total > 0");
+
+  const withDiscount = generatePdfEstimate(manifest, { discountPercent: 10 });
+  assert(withDiscount.totals.discount > 0, "discount > 0 with 10%");
+  assert(withDiscount.totals.total < estimate.totals.total, "total reduced by discount");
+
+  const proposalLines = mapPdfEstimateToProposalLines(estimate);
+  assertEqual(proposalLines.items.length, 2, "proposal has 2 lines");
+  assert(proposalLines.total > 0, "proposal total > 0");
+  assertEqual(proposalLines.items[0].unit, "м.п.", "proposal unit is м.п.");
+  assertEqual(proposalLines.items[0].quantity, 3, "kitchen quantity 3");
+}
+
+console.log("PDF store smoke (upload → draft → review → estimate)");
+{
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(loadMigrationSql());
+  const db = makeD1(sqlite);
+
+  const ci = await db.prepare("INSERT INTO clients (name) VALUES (?)").bind("PDF Тест").run();
+  const oi = await db.prepare("INSERT INTO orders (client_id) VALUES (?)").bind(ci.meta.last_row_id).run();
+  const orderId = oi.meta.last_row_id;
+
+  const uploadResult = await createPdfUpload({
+    db, orderId, fileName: "kitchen-plan.pdf", fileSizeBytes: 2048576,
+    mimeType: "application/pdf", pageCount: 3, checksum: "abc123"
+  });
+  assert(uploadResult.ok, "createPdfUpload succeeds");
+  assertEqual(uploadResult.status, 201, "upload returns 201");
+  assertEqual(uploadResult.body.item.fileName, "kitchen-plan.pdf", "upload fileName");
+  assertEqual(uploadResult.body.item.pageCount, 3, "upload pageCount 3");
+  assertEqual(uploadResult.body.item.status, "uploaded", "upload status uploaded");
+
+  const uploadId = uploadResult.body.item.id;
+
+  const listUploads = await listOrderPdfUploads({ db, orderId });
+  assert(listUploads.ok, "listOrderPdfUploads succeeds");
+  assertEqual(listUploads.body.items.length, 1, "1 upload listed");
+
+  const badUpload = await createPdfUpload({ db, orderId, fileName: "photo.jpg", mimeType: "image/jpeg" });
+  assert(!badUpload.ok, "non-PDF upload fails");
+  assertEqual(badUpload.status, 400, "unsupported file returns 400");
+
+  const draftResult = await createPdfDraft({
+    db, uploadId, orderId,
+    manifest: {
+      document: { fileName: "kitchen-plan.pdf" },
+      pageCount: 3,
+      pages: [
+        { pageNumber: 1, pageType: "floor_plan", furnitureZones: [
+          { id: "z1", zoneType: "kitchen", label: "Кухня 3.5м", dimensions: { widthMm: 3500, heightMm: 2700, depthMm: 600 } }
+        ]},
+        { pageNumber: 2, pageType: "elevation" },
+        { pageNumber: 3, pageType: "specification" }
+      ]
+    },
+    createdBy: "manager"
+  });
+  assert(draftResult.ok, "createPdfDraft succeeds");
+  assertEqual(draftResult.status, 201, "draft returns 201");
+  assertEqual(draftResult.body.item.status, PDF_DRAFT_STATUS.DRAFT, "draft status is draft");
+  assertEqual(draftResult.body.item.manifest.pages.length, 3, "draft manifest has 3 pages");
+
+  const draftId = draftResult.body.item.id;
+
+  const listDrafts = await listOrderPdfDrafts({ db, orderId });
+  assert(listDrafts.ok, "listOrderPdfDrafts succeeds");
+  assertEqual(listDrafts.body.items.length, 1, "1 draft listed");
+
+  const getDraft = await getPdfDraft({ db, draftId });
+  assert(getDraft.ok, "getPdfDraft succeeds");
+  assertEqual(getDraft.body.item.manifest.pages[0].furnitureZones[0].zoneType, "kitchen", "draft zone type");
+
+  const dimsResult = await getDraftDimensions({ db, draftId });
+  assert(dimsResult.ok, "getDraftDimensions succeeds");
+  assertEqual(dimsResult.body.dimensionCount, 1, "1 dimension extracted");
+  assertEqual(dimsResult.body.dimensions[0].widthMm, 3500, "dimension width 3500");
+
+  const estimateBeforeReview = await generateAndStoreEstimate({ db, draftId });
+  assert(!estimateBeforeReview.ok, "estimate before review fails");
+  assertEqual(estimateBeforeReview.status, 409, "not reviewed returns 409");
+
+  const updateManifest = await updatePdfDraftManifest({
+    db, draftId,
+    manifest: draftResult.body.item.manifest,
+    aiProvider: "openai", aiModel: "gpt-4", processingTimeMs: 1500, analysisVersion: "test-v1"
+  });
+  assert(updateManifest.ok, "updatePdfDraftManifest succeeds");
+  assertEqual(updateManifest.body.item.status, PDF_DRAFT_STATUS.REVIEWED, "draft is reviewed after update");
+  assertEqual(updateManifest.body.item.aiProvider, "openai", "ai provider stored");
+  assertEqual(updateManifest.body.item.processingTimeMs, 1500, "processing time stored");
+
+  const estimateResult = await generateAndStoreEstimate({ db, draftId });
+  assert(estimateResult.ok, "generateAndStoreEstimate succeeds after review");
+  assertEqual(estimateResult.status, 201, "estimate returns 201");
+  assert(estimateResult.body.estimate.items.length > 0, "estimate has items");
+  assert(estimateResult.body.proposalLines.items.length > 0, "proposal lines generated");
+  assert(estimateResult.body.estimate.totals.total > 0, "estimate total > 0");
+
+  const reviewResult = await reviewPdfDraft({
+    db, draftId, status: PDF_DRAFT_STATUS.APPROVED, reviewedBy: "manager", reviewNote: "Manifest корректен"
+  });
+  assert(reviewResult.ok, "reviewPdfDraft approves");
+  assertEqual(reviewResult.body.item.status, PDF_DRAFT_STATUS.APPROVED, "draft is approved");
+  assert(!!reviewResult.body.item.reviewedAt, "reviewedAt is set");
+  assertEqual(reviewResult.body.item.reviewNote, "Manifest корректен", "review note stored");
+
+  const doubleApprove = await reviewPdfDraft({ db, draftId, status: PDF_DRAFT_STATUS.APPROVED });
+  assert(!doubleApprove.ok, "double approve fails");
+  assertEqual(doubleApprove.status, 409, "already approved returns 409");
+
+  const rejectResult = await reviewPdfDraft({ db, draftId, status: PDF_DRAFT_STATUS.REJECTED });
+  assert(!rejectResult.ok, "reject after approve fails");
+
+  const storedEstimate = await getDraftEstimate({ db, draftId });
+  assert(storedEstimate.ok, "getDraftEstimate succeeds");
+  assertEqual(storedEstimate.body.item.totalKzt, estimateResult.body.estimate.totals.total, "stored estimate total matches");
+
+  const proposalResult = await getDraftProposalLines({ db, draftId });
+  assert(proposalResult.ok, "getDraftProposalLines succeeds");
+  assert(proposalResult.body.proposalLines.items.length > 0, "proposal lines returned");
+
+  sqlite.close();
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

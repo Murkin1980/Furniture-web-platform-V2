@@ -47,9 +47,9 @@
   <p class="sub">Платформа мебели, вторая версия · Roadmap: <a href="v2-roadmap.md">v2-roadmap.md</a> · Чек-лист: <a href="STAGE_CHECKLIST.md">STAGE_CHECKLIST.md</a></p>
 
   <div class="grid">
-    <div class="card"><div class="k">Текущий этап</div><div class="v">Фаза 2 — завершена ✅</div></div>
-    <div class="card"><div class="k">Готовность</div><div class="v">100% фазы 2</div></div>
-    <div class="card"><div class="k">Последний commit</div><div class="v">Phase 2 — visual standards</div></div>
+    <div class="card"><div class="k">Текущий этап</div><div class="v">Фаза 3 — завершена ✅</div></div>
+    <div class="card"><div class="k">Готовность</div><div class="v">60% (3/5)</div></div>
+    <div class="card"><div class="k">Последний commit</div><div class="v">Phase 3 — PDF intake</div></div>
     <div class="card"><div class="k">Deploy</div><div class="v"><a href="https://furniture-platform-v2.pages.dev">production</a></div></div>
   </div>
 
@@ -63,7 +63,7 @@
     <h2>Фазы V2</h2>
     <div class="phase"><div class="name">Фаза 1 — Коммерческая упаковка</div><div class="right"><span class="badge done">завершена</span><div class="bar"><span style="width:100%"></span></div><span class="pct">100%</span></div></div>
     <div class="phase"><div class="name">Фаза 2 — Управляемый визуал</div><div class="right"><span class="badge done">завершена</span><div class="bar"><span style="width:100%"></span></div><span class="pct">100%</span></div></div>
-    <div class="phase"><div class="name">Фаза 3 — PDF intake</div><div class="right"><span class="badge idle">не начата</span><div class="bar"><span style="width:0%"></span></div><span class="pct">0%</span></div></div>
+    <div class="phase"><div class="name">Фаза 3 — PDF intake</div><div class="right"><span class="badge done">завершена</span><div class="bar"><span style="width:100%"></span></div><span class="pct">100%</span></div></div>
     <div class="phase"><div class="name">Фаза 4 — Supplier-aware pricing</div><div class="right"><span class="badge idle">не начана</span><div class="bar"><span style="width:0%"></span></div><span class="pct">0%</span></div></div>
     <div class="phase"><div class="name">Фаза 5 — Controlled 3D upgrade</div><div class="right"><span class="badge idle">не начата</span><div class="bar"><span style="width:0%"></span></div><span class="pct">0%</span></div></div>
   </div>
@@ -73,10 +73,11 @@
     <table>
       <thead><tr><th>Проверка</th><th>Статус</th><th>Дата</th></tr></thead>
       <tbody>
-        <tr><td>Миграции (0001, 0002, 0003)</td><td><span class="badge done">✅ local + remote</span></td><td>2026-06-28</td></tr>
-        <tr><td>Package lifecycle smoke</td><td><span class="badge done">✅ 167/167</span></td><td>2026-06-28</td></tr>
+        <tr><td>Миграции (0001–0004)</td><td><span class="badge done">✅ local + remote</span></td><td>2026-06-28</td></tr>
+        <tr><td>Package lifecycle smoke</td><td><span class="badge done">✅ 244/244</span></td><td>2026-06-28</td></tr>
         <tr><td>Production API smoke</td><td><span class="badge done">✅ all endpoints 200</span></td><td>2026-06-28</td></tr>
-        <tr><td>Deliverable lifecycle smoke</td><td><span class="badge done">✅ seed, transitions, revisions</span></td><td>2026-06-28</td></tr>
+        <tr><td>PDF intake smoke</td><td><span class="badge done">✅ upload → draft → review → estimate</span></td><td>2026-06-28</td></tr>
+        <tr><td>Visual progress dashboard</td><td><span class="badge done">✅ /progress</span></td><td>2026-06-28</td></tr>
       </tbody>
     </table>
   </div>
@@ -91,6 +92,7 @@
         <tr><td>2026-06-28</td><td>Деплой</td><td>D1 remote миграция, Pages project создан, ADMIN_TOKEN секрет, импорт-фикс</td><td>Production: furniture-platform-v2.pages.dev, API 200</td></tr>
         <tr><td>2026-06-28</td><td>Фаза 1.2</td><td>message templates, payment store, analytics, admin UI, миграция 0002</td><td>Фаза 1 завершена, smoke 104/104</td></tr>
         <tr><td>2026-06-28</td><td>Фаза 2</td><td>visual standards, deliverable store, revision workflow, admin UI, миграция 0003</td><td>Фаза 2 завершена, smoke 167/167</td></tr>
+        <tr><td>2026-06-28</td><td>Фаза 3</td><td>PDF intake: manifest v2, upload/draft/estimate store, review gate, admin UI, миграция 0004</td><td>Фаза 3 завершена, smoke 244/244</td></tr>
       </tbody>
     </table>
   </div>

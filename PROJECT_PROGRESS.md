@@ -8,11 +8,11 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 
 | Параметр | Значение |
 |---|---|
-| Этап | Фаза 2 — Управляемый визуал (завершена) |
-| Процент готовности | 100% фазы 2 |
-| Последний commit | (этот коммит: Phase 2 visual standards) |
+| Этап | Фаза 3 — PDF intake (завершена) |
+| Процент готовности | 100% фазы 3 (60% общий) |
+| Последний commit | (этот коммит: Phase 3 PDF intake) |
 | Deploy | production: https://furniture-platform-v2.pages.dev |
-| Следующий шаг | Фаза 3 — PDF intake и полуавтоматическое проектирование |
+| Следующий шаг | Фаза 4 — Supplier-aware pricing |
 
 ## Архитектурные решения V2
 
@@ -39,7 +39,12 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 - 2.4 Smoke + деплой — 100% (167/167, production API 200)
 
 ### Фаза 3 — PDF intake
-- Статус: не начата — 0%
+- Статус: завершена ✅
+- 3.1 PDF upload workflow + миграция 0004 — 100%
+- 3.2 PDF manifest v2 + draft store — 100%
+- 3.3 Размеры + estimate + proposal lines — 100%
+- 3.4 Human review gate + admin UI — 100%
+- 3.5 Smoke + деплой — 100% (244/244, production API 200)
 
 ### Фаза 4 — Supplier-aware pricing
 - Статус: не начата — 0%
@@ -56,16 +61,17 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 | 2026-06-28 | Деплой | D1 remote миграция, Pages project создан, ADMIN_TOKEN секрет, импорт-фикс | Production: furniture-platform-v2.pages.dev, API 200 |
 | 2026-06-28 | Фаза 1.2 | message templates, payment store, analytics, admin UI, миграция 0002 | Фаза 1 завершена, smoke 104/104 |
 | 2026-06-28 | Фаза 2 | visual standards, deliverable store, revision workflow, admin UI, миграция 0003 | Фаза 2 завершена, smoke 167/167 |
+| 2026-06-28 | Фаза 3 | PDF intake: manifest v2, upload/draft/estimate store, review gate, admin UI, миграция 0004 | Фаза 3 завершена, smoke 244/244 |
 
 ## Проверки
 
 | Проверка | Статус | Дата |
 |---|---|---|
-| Миграции (0001, 0002, 0003) | ✅ local + remote | 2026-06-28 |
-| Package lifecycle smoke | ✅ 167/167 | 2026-06-28 |
-| Production API smoke | ✅ packages, templates, analytics, deliverable-specs — 200 | 2026-06-28 |
-| Analytics pipeline smoke | ✅ funnel + metrics | 2026-06-28 |
-| Deliverable lifecycle smoke | ✅ seed, transitions, attach, revisions | 2026-06-28 |
+| Миграции (0001–0004) | ✅ local + remote | 2026-06-28 |
+| Package lifecycle smoke | ✅ 244/244 | 2026-06-28 |
+| Production API smoke | ✅ all endpoints 200 | 2026-06-28 |
+| PDF intake smoke | ✅ upload → draft → review → estimate | 2026-06-28 |
+| Visual progress dashboard | ✅ /progress | 2026-06-28 |
 
 ## Риски и запреты
 

@@ -50,11 +50,13 @@
 
 Цель: менеджер использует PDF intake как ускоритель подготовки proposal, размеров и визуала с human review.
 
-- [ ] PDF upload workflow (manager-facing)
-- [ ] Draft proposal из PDF manifest + room/furniture-zone extraction
-- [ ] Размеры мебели из PDF в proposal
-- [ ] Human review gate перед коммерческим использованием
-- [ ] Smoke: PDF → draft proposal → review → publish
+**Статус: завершена ✅**
+
+- [x] PDF upload workflow (manager-facing)
+- [x] Draft proposal из PDF manifest + room/furniture-zone extraction
+- [x] Размеры мебели из PDF в proposal
+- [x] Human review gate перед коммерческим использованием
+- [x] Smoke: PDF → draft proposal → review → publish
 
 ## Фаза 4 — Supplier-aware pricing
 

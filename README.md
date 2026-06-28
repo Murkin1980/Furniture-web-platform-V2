@@ -50,10 +50,10 @@ V2 строится не вокруг базовой автоматизации,
 
 ## Статус
 
-Фаза 2 — Управляемый визуал: **завершена и задеплоена** ✅
-Production: https://furniture-platform-v2.pages.dev · Admin: `/admin`
-API: packages, engagements, payments, templates, analytics, deliverable-specs, deliverables (все 200).
-Smoke 167/167, миграции 0001–0003 (local + remote D1).
-Deliverable standards: BW preview (Package A), color multi-view + layout variants + inclusions sheet (Package B), revision workflow (1 раунд для Package B).
-Следующий шаг: Фаза 3 — PDF intake и полуавтоматическое проектирование.
+Фаза 3 — PDF intake: **завершена и задеплоена** ✅ (60% общего прогресса, 3/5 фаз)
+Production: https://furniture-platform-v2.pages.dev · Admin: `/admin` · Прогресс: `/progress`
+API: packages, engagements, payments, templates, analytics, deliverables, deliverable-specs, pdf uploads/drafts (все 200).
+Smoke 244/244, миграции 0001–0004 (local + remote D1).
+PDF intake: manifest v2 (rooms canonical, unified zone types), upload→draft→review→estimate→proposal, human review gate.
+Следующий шаг: Фаза 4 — Supplier-aware pricing.
 Подробности: `PROJECT_PROGRESS.md`.

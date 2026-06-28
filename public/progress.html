@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прогресс V2 — Платформа мебели</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1f242e; --border:#2a313d;
+    --text:#e7ecf3; --muted:#8b95a6; --accent:#4f8cff; --accent-2:#22c55e;
+    --warn:#f59e0b; --danger:#ef4444; --ok:#22c55e; --purple:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Golos Text","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 24px 60px}
+  h1{font-size:1.6rem;font-weight:700;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:.95rem;margin-bottom:28px}
+  .sub a{color:var(--accent);text-decoration:none}
+  .overall{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px}
+  .overall-bar-wrap{height:12px;background:#0f1115;border-radius:8px;overflow:hidden;margin-top:12px}
+  .overall-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:8px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+  .overall-row{display:flex;justify-content:space-between;align-items:baseline}
+  .overall-pct{font-size:2rem;font-weight:700;color:var(--accent-2)}
+  .overall-label{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+  .phase{background:var(--panel);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;transition:border-color .3s}
+  .phase.done{border-color:rgba(34,197,94,.3)}
+  .phase.active{border-color:rgba(79,140,255,.4)}
+  .phase-header{padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;user-select:none}
+  .phase-header:hover{background:var(--panel-2)}
+  .phase-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0}
+  .phase-num.done{background:rgba(34,197,94,.15);color:var(--ok)}
+  .phase-num.active{background:rgba(79,140,255,.15);color:var(--accent)}
+  .phase-num.idle{background:#2a313d;color:var(--muted)}
+  .phase-info{flex:1;min-width:0}
+  .phase-title{font-size:1.05rem;font-weight:600}
+  .phase-desc{color:var(--muted);font-size:.83rem;margin-top:2px}
+  .phase-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+  .phase-pct{font-size:1.3rem;font-weight:700;min-width:50px;text-align:right}
+  .phase-pct.done{color:var(--ok)}
+  .phase-pct.active{color:var(--accent)}
+  .phase-pct.idle{color:var(--muted)}
+  .phase-mini-bar{width:80px;height:6px;background:#0f1115;border-radius:4px;overflow:hidden}
+  .phase-mini-bar>span{display:block;height:100%;border-radius:4px;transition:width 1s ease}
+  .chevron{color:var(--muted);font-size:.7rem;transition:transform .3s}
+  .phase.expanded .chevron{transform:rotate(180deg)}
+  .phase-body{display:none;padding:0 24px 22px;border-top:1px solid var(--border)}
+  .phase.expanded .phase-body{display:block}
+  .checklist{list-style:none;margin-top:16px}
+  .checklist li{padding:7px 0;font-size:.9rem;color:var(--text);display:flex;align-items:flex-start;gap:10px}
+  .checklist li .ico{flex-shrink:0;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;margin-top:2px}
+  .checklist li.done .ico{background:rgba(34,197,94,.2);color:var(--ok)}
+  .checklist li.pending .ico{background:#2a313d;color:var(--muted)}
+  .checklist li.done{color:var(--text)}
+  .checklist li.pending{color:var(--muted)}
+  .deliverables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:16px}
+  .deliverable-chip{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.83rem}
+  .deliverable-chip .dt{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+  .deliverable-chip .dv{font-weight:600}
+  .stats-row{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+  .stat{flex:1;min-width:120px}
+  .stat .k{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+  .stat .v{font-size:1.2rem;font-weight:700;margin-top:3px}
+  .stat .v.ok{color:var(--ok)}
+  .stat .v.accent{color:var(--accent)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:22px;font-size:.8rem;color:var(--muted)}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:32px;padding-top:20px;border-top:1px solid var(--border)}
+  .footer a{color:var(--accent);text-decoration:none}
+  .timeline{display:flex;gap:0;margin-bottom:24px;border-radius:10px;overflow:hidden;height:8px}
+  .timeline-seg{flex:1;transition:opacity .3s}
+  .timeline-seg.done{background:var(--ok)}
+  .timeline-seg.active{background:var(--accent)}
+  .timeline-seg.idle{background:#2a313d}
+  @media(max-width:640px){
+    .phase-header{padding:16px}
+    .phase-body{padding:0 16px 18px}
+    .phase-mini-bar{display:none}
+    .deliverables-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Прогресс V2 — Платформа мебели</h1>
+  <p class="sub">Коммерческий конструктор глубины услуги · <a href="https://github.com/Murkin1980/Furniture-web-platform-V2">GitHub</a> · <a href="https://furniture-platform-v2.pages.dev">Production</a> · <a href="/admin">Админка</a></p>
+
+  <div class="overall">
+    <div class="overall-row">
+      <div>
+        <div class="overall-label">Общий прогресс по 5 фазам</div>
+        <div style="margin-top:4px;font-size:.85rem;color:var(--muted)">3 из 5 фаз завершены</div>
+      </div>
+      <div class="overall-pct">60%</div>
+    </div>
+    <div class="overall-bar-wrap"><div class="overall-bar" style="width:60%"></div></div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-seg done" title="Фаза 1 — завершена"></div>
+    <div class="timeline-seg done" title="Фаза 2 — завершена"></div>
+    <div class="timeline-seg done" title="Фаза 3 — завершена"></div>
+    <div class="timeline-seg idle" title="Фаза 4 — не начата"></div>
+    <div class="timeline-seg idle" title="Фаза 5 — не начата"></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--ok)"></span>завершена</span>
+    <span><span class="dot" style="background:var(--accent)"></span>в работе</span>
+    <span><span class="dot" style="background:#2a313d"></span>не начата</span>
+    <span>нажмите на фазу, чтобы развернуть детали</span>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="footer">
+    Smoke: <span style="color:var(--ok)">244/244 passed</span> · Миграции: <span style="color:var(--ok)">0001–0004 local+remote</span><br>
+    Production API: <span style="color:var(--ok)">all 200</span> · Обновлено: 2026-06-28
+  </div>
+</div>
+
+<script>
+const phases = [
+  {
+    n:1, title:"Коммерческая упаковка", desc:"Product/package model, платежи, шаблоны, аналитика", pct:100, status:"done",
+    items:[
+      {t:"Product/package model и CRM states (engagementLevel, servicePackage, credit-on-order)", done:true},
+      {t:"Миграция 0001: clients, orders, catalog, engagements, conversion events", done:true},
+      {t:"Credit-on-order policy (зачёт стоимости пакета в заказ)", done:true},
+      {t:"Миграция 0002: package_payments", done:true},
+      {t:"Payment store: создание/подтверждение/отмена, авто-переход → paid", done:true},
+      {t:"5 upsell-шаблонов сообщений (rough→A, rough→B, A→B, A→order, B→order)", done:true},
+      {t:"Analytics: воронка вовлечения + метрики (время, правки, зачёт, выручка)", done:true},
+      {t:"Менеджерский admin UI (sidebar, модальные окна, выбор пакета)", done:true},
+      {t:"Smoke 104/104, production deploy", done:true}
+    ],
+    stats:[
+      {k:"Пакетов",v:"3",cls:""},
+      {k:"Шаблонов",v:"5",cls:""},
+      {k:"API endpoints",v:"8",cls:""},
+      {k:"Smoke",v:"104/104",cls:"ok"}
+    ]
+  },
+  {
+    n:2, title:"Управляемый визуал", desc:"Deliverable standards, lifecycle, revision workflow", pct:100, status:"done",
+    items:[
+      {t:"Visual standards: BW preview (Package A — 3 deliverables)", done:true},
+      {t:"Visual standards: color multi-view (Package B — 6 deliverables)", done:true},
+      {t:"Миграция 0003: package_deliverables, deliverable_revisions", done:true},
+      {t:"Deliverable store: seed (idempotent), lifecycle transitions", done:true},
+      {t:"attachArtifact (URL + format + metadata)", done:true},
+      {t:"Revision workflow: requestRevision (списывает раунд), resolveRevision", done:true},
+      {t:"getPackageDeliverableState (агрегированное состояние пакета)", done:true},
+      {t:"Admin UI: раздел «Визуал» (загрузка, статусы, артефакты, правки)", done:true},
+      {t:"Smoke 167/167 (включая deliverables), production deploy", done:true}
+    ],
+    deliverables:[
+      {dt:"Package A",dv:"КП + смета + BW preview"},
+      {dt:"Package B",dv:"Color views + КП + dimensions"},
+      {dt:"Package B",dv:"Layout variants + inclusions"},
+      {dt:"Package B",dv:"Recommended materials"},
+      {dt:"Revision",dv:"1 раунд для Package B"},
+      {dt:"States",dv:"pending→progress→ready→delivered"}
+    ],
+    stats:[
+      {k:"Deliverable типов",v:"8",cls:""},
+      {k:"Package A items",v:"3",cls:""},
+      {k:"Package B items",v:"6",cls:""},
+      {k:"Smoke",v:"167/167",cls:"ok"}
+    ]
+  },
+  {
+    n:3, title:"PDF intake", desc:"Полуавтоматическое проектирование из клиентских PDF", pct:100, status:"done",
+    items:[
+      {t:"PDF upload workflow (manager-facing) — pdf_uploads с metadata", done:true},
+      {t:"Миграция 0004: pdf_uploads, pdf_drafts, pdf_estimates", done:true},
+      {t:"Unified manifest v2: rooms в canonical schema, единый enum типов мебели", done:true},
+      {t:"PDF draft store: create, update manifest, review gate (approved/rejected)", done:true},
+      {t:"Audit columns: ai_provider, ai_model, processing_time_ms, analysis_version", done:true},
+      {t:"Estimate generator v2: единую pricing таблицу, discount support", done:true},
+      {t:"Proposal lines: basePrice + unitPrice × qty (исправлен V1 bug)", done:true},
+      {t:"Dimensions extraction из manifest (width/height/depth/length)", done:true},
+      {t:"Human review gate: draft → reviewed → approved/rejected", done:true},
+      {t:"API: uploads, drafts (CRUD + estimate + dimensions + proposal + review)", done:true},
+      {t:"Admin UI: раздел «PDF Intake» (uploads, drafts, review, размеры, КП)", done:true},
+      {t:"Smoke 244/244 (PDF manifest, estimate, store lifecycle), production deploy", done:true}
+    ],
+    stats:[
+      {k:"Миграция",v:"0004",cls:""},
+      {k:"Manifest",v:"v2",cls:""},
+      {k:"Zone типов",v:"13",cls:""},
+      {k:"Smoke",v:"244/244",cls:"ok"}
+    ]
+  },
+  {
+    n:4, title:"Supplier-aware pricing", desc:"Versioned supplier catalog, controlled price-list workflow", pct:0, status:"idle",
+    items:[
+      {t:"Versioned supplier catalog (schema + миграции)", done:false},
+      {t:"Controlled price-list workflow (импорт, версии, аудит)", done:false},
+      {t:"Supplier-aware estimate builder", done:false},
+      {t:"Supplier pricing влияет на Package A и B смету", done:false},
+      {t:"Smoke: supplier version → estimate → proposal", done:false}
+    ]
+  },
+  {
+    n:5, title:"Controlled 3D upgrade", desc:"Опциональное усиление Package B через SketchUp/EasyKitchen", pct:0, status:"idle",
+    items:[
+      {t:"Geometry/render adapter во внешнем Windows/SketchUp контуре", done:false},
+      {t:"Integration с sketchup-node-service (fail-closed, HMAC, dry-run)", done:false},
+      {t:"Optional 3D upgrade flag на Package B", done:false},
+      {t:"Render artifacts → package deliverable pipeline", done:false},
+      {t:"Smoke: package B → 3D upgrade → artifact → package state", done:false}
+    ]
+  }
+];
+
+const ico = {done:"✓",pending:"○"};
+const colors = {done:"var(--ok)",active:"var(--accent)",idle:"#2a313d"};
+
+function render(){
+  const c = document.getElementById("phases");
+  c.innerHTML = phases.map((p,i)=>`
+    <div class="phase ${p.status} ${i<3?"expanded":""}" data-idx="${i}">
+      <div class="phase-header" onclick="toggle(${i})">
+        <div class="phase-num ${p.status}">${p.status==="done"?"✓":p.n}</div>
+        <div class="phase-info">
+          <div class="phase-title">Фаза ${p.n} — ${p.title}</div>
+          <div class="phase-desc">${p.desc}</div>
+        </div>
+        <div class="phase-right">
+          <div class="phase-mini-bar"><span style="width:${p.pct}%;background:${colors[p.status]}"></span></div>
+          <div class="phase-pct ${p.status}">${p.pct}%</div>
+          <div class="chevron">▼</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <ul class="checklist">
+          ${p.items.map(it=>`<li class="${it.done?"done":"pending"}"><span class="ico" style="background:${it.done?"rgba(34,197,94,.2)":"#2a313d"};color:${it.done?"var(--ok)":"var(--muted)"}">${ico[it.done?"done":"pending"]}</span>${it.t}</li>`).join("")}
+        </ul>
+        ${p.deliverables?`<div class="deliverables-grid">${p.deliverables.map(d=>`<div class="deliverable-chip"><div class="dt">${d.dt}</div><div class="dv">${d.dv}</div></div>`).join("")}</div>`:""}
+        ${p.stats?`<div class="stats-row">${p.stats.map(s=>`<div class="stat"><div class="k">${s.k}</div><div class="v ${s.cls||""}">${s.v}</div></div>`).join("")}</div>`:""}
+      </div>
+    </div>`).join("");
+}
+
+function toggle(i){
+  const el = document.querySelector(`[data-idx="${i}"]`);
+  el.classList.toggle("expanded");
+}
+
+render();
+</script>
+</body>
+</html>

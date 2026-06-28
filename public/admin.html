@@ -89,6 +89,7 @@
       <a data-view="templates">Шаблоны сообщений</a>
       <a data-view="analytics">Аналитика</a>
       <a data-view="visual">Визуал (Deliverables)</a>
+      <a data-view="pdf">PDF Intake</a>
     </nav>
   </aside>
   <main>
@@ -140,6 +141,18 @@
       </div>
       <div id="deliverable-state-box" class="card hidden"></div>
       <div id="deliverable-list"></div>
+    </div>
+    <div id="view-pdf" class="view hidden">
+      <div class="row" style="margin-bottom:16px">
+        <label>Order ID<input type="number" id="pdf-order-id" min="1" placeholder="№ заказа" /></label>
+        <button id="btn-load-pdf">Загрузить</button>
+        <button id="btn-upload-pdf" class="secondary">Загрузить PDF</button>
+        <button id="btn-create-draft" class="secondary">Создать draft</button>
+      </div>
+      <h2>Uploads</h2>
+      <div id="pdf-upload-list"></div>
+      <h2>Drafts</h2>
+      <div id="pdf-draft-list"></div>
     </div>
   </main>
   <div id="modal-overlay" class="modal-overlay hidden">
