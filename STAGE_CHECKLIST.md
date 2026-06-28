@@ -37,12 +37,14 @@
 
 Цель: предсказуемые форматы результата — preview sheet, colored view set, dimensions sheet, revision round, package state.
 
-- [ ] Стандарт BW preview (Package A): формат, ракурс, артефакт
-- [ ] Стандарт color multi-view (Package B): 2–3 варианта компоновки, ракурсы, лист «входит/не входит»
-- [ ] Dimensions sheet контракт
-- [ ] Revision round workflow (один раунд корректировок для Package B)
-- [ ] Финальный package state в CRM и order context
-- [ ] Smoke: полный deliverable lifecycle для каждого пакета
+**Статус: завершена ✅**
+
+- [x] Стандарт BW preview (Package A): формат, ракурс, артефакт
+- [x] Стандарт color multi-view (Package B): 2–3 варианта компоновки, ракурсы, лист «входит/не входит»
+- [x] Dimensions sheet контракт
+- [x] Revision round workflow (один раунд корректировок для Package B)
+- [x] Финальный package state в CRM и order context
+- [x] Smoke: полный deliverable lifecycle для каждого пакета
 
 ## Фаза 3 — PDF intake и полуавтоматическое проектирование
 

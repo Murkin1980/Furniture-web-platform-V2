@@ -50,6 +50,30 @@ import {
   listEngagementPayments,
   getPayment
 } from "../src/packages/payment-store.js";
+import {
+  DELIVERABLE_TYPES,
+  DELIVERABLE_STATUS,
+  getDeliverableSpec,
+  listAllDeliverableSpecs,
+  buildDeliverableDefaults,
+  isValidDeliverableType,
+  isValidDeliverableStatus,
+  isValidArtifactFormat,
+  describePackageVisualState,
+  getPackageDeliverableSummary
+} from "../src/packages/visual-standards.js";
+import {
+  seedEngagementDeliverables,
+  listEngagementDeliverables,
+  getDeliverable,
+  transitionDeliverableStatus,
+  attachArtifact,
+  requestRevision,
+  resolveRevision,
+  listDeliverableRevisions,
+  getPackageDeliverableState,
+  canTransitionDeliverable
+} from "../src/packages/deliverable-store.js";
 
 let passed = 0;
 let failed = 0;
@@ -138,7 +162,8 @@ function loadMigrationSql() {
   const dir = new URL("../migrations/", import.meta.url);
   return [
     readFileSync(new URL("0001_packages.sql", dir), "utf8"),
-    readFileSync(new URL("0002_package_payments.sql", dir), "utf8")
+    readFileSync(new URL("0002_package_payments.sql", dir), "utf8"),
+    readFileSync(new URL("0003_deliverables.sql", dir), "utf8")
   ].join("\n");
 }
 
@@ -428,6 +453,172 @@ console.log("Analytics smoke");
   assertEqual(metricsResult.body.byPackage.length, 1, "metrics byPackage has 1 package (package_a)");
 
   sqlite.close();
+}
+
+console.log("Visual standards smoke");
+{
+  const specs = listAllDeliverableSpecs();
+  assertEqual(specs.length, 3, "3 package deliverable specs");
+
+  const level1 = getDeliverableSpec(PACKAGE_CODES.LEVEL_1);
+  assertEqual(level1.deliverables.length, 0, "level_1 has 0 deliverables");
+
+  const packageA = getDeliverableSpec(PACKAGE_CODES.PACKAGE_A);
+  assertEqual(packageA.deliverables.length, 3, "package_a has 3 deliverables");
+  assert(packageA.deliverables.some((d) => d.type === DELIVERABLE_TYPES.BW_PREVIEW_SHEET), "package_a includes bw_preview_sheet");
+  assert(packageA.deliverables.some((d) => d.type === DELIVERABLE_TYPES.COMMERCIAL_PROPOSAL), "package_a includes commercial_proposal");
+
+  const packageB = getDeliverableSpec(PACKAGE_CODES.PACKAGE_B);
+  assertEqual(packageB.deliverables.length, 6, "package_b has 6 deliverables");
+  assert(packageB.deliverables.some((d) => d.type === DELIVERABLE_TYPES.COLOR_VIEW_SET), "package_b includes color_view_set");
+  assert(packageB.deliverables.some((d) => d.type === DELIVERABLE_TYPES.LAYOUT_VARIANTS), "package_b includes layout_variants");
+  assert(packageB.deliverables.some((d) => d.type === DELIVERABLE_TYPES.INCLUSIONS_SHEET), "package_b includes inclusions_sheet");
+
+  const defaults = buildDeliverableDefaults(PACKAGE_CODES.PACKAGE_B);
+  assertEqual(defaults.length, 6, "buildDeliverableDefaults package_b returns 6");
+  assertEqual(defaults[0].status, DELIVERABLE_STATUS.PENDING, "default status is pending");
+
+  assert(isValidDeliverableType("bw_preview_sheet"), "bw_preview_sheet is valid type");
+  assert(!isValidDeliverableType("unknown_type"), "unknown_type is invalid");
+  assert(isValidDeliverableStatus("ready"), "ready is valid status");
+  assert(isValidArtifactFormat("png"), "png is valid format");
+
+  const descA = describePackageVisualState(PACKAGE_CODES.PACKAGE_A);
+  assert(descA.includes("Package A"), "package_a visual description");
+  const summaryB = getPackageDeliverableSummary(PACKAGE_CODES.PACKAGE_B);
+  assertEqual(summaryB.total, 6, "package_b summary total 6");
+
+  const notFound = getDeliverableSpec("nonexistent");
+  assertEqual(notFound, null, "nonexistent spec returns null");
+}
+
+console.log("Deliverable lifecycle smoke");
+{
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(loadMigrationSql());
+  const db = makeD1(sqlite);
+
+  const ci = await db.prepare("INSERT INTO clients (name) VALUES (?)").bind("Визуал Тест").run();
+  const oi = await db.prepare("INSERT INTO orders (client_id) VALUES (?)").bind(ci.meta.last_row_id).run();
+  const orderId = oi.meta.last_row_id;
+
+  const created = await createEngagement({ db, orderId, packageCode: PACKAGE_CODES.PACKAGE_B });
+  const engagementId = created.body.item.id;
+
+  const seedResult = await seedEngagementDeliverables({ db, engagementId });
+  assert(seedResult.ok, "seedEngagementDeliverables succeeds");
+  assertEqual(seedResult.status, 201, "seed returns 201");
+  assertEqual(seedResult.body.seeded, 6, "package_b seeded 6 deliverables");
+
+  const reSeed = await seedEngagementDeliverables({ db, engagementId });
+  assert(reSeed.ok, "re-seed succeeds (idempotent)");
+  assertEqual(reSeed.body.seeded, 0, "re-seed returns 0 (already seeded)");
+
+  const listResult = await listEngagementDeliverables({ db, engagementId });
+  assert(listResult.ok, "listEngagementDeliverables succeeds");
+  assertEqual(listResult.body.items.length, 6, "6 deliverables listed");
+
+  const deliverableId = listResult.body.items[0].id;
+  assertEqual(listResult.body.items[0].status, DELIVERABLE_STATUS.PENDING, "first deliverable is pending");
+
+  const inProgress = await transitionDeliverableStatus({ db, deliverableId, toStatus: DELIVERABLE_STATUS.IN_PROGRESS });
+  assert(inProgress.ok, "transition to in_progress succeeds");
+  assertEqual(inProgress.body.item.status, DELIVERABLE_STATUS.IN_PROGRESS, "status is in_progress");
+
+  const badTransition = await transitionDeliverableStatus({ db, deliverableId, toStatus: DELIVERABLE_STATUS.DELIVERED });
+  assert(!badTransition.ok, "in_progress -> delivered is blocked");
+  assertEqual(badTransition.status, 409, "bad transition returns 409");
+
+  const ready = await transitionDeliverableStatus({ db, deliverableId, toStatus: DELIVERABLE_STATUS.READY });
+  assert(ready.ok, "transition to ready succeeds");
+  assert(!!ready.body.item.completedAt, "completedAt is set for ready");
+
+  const attachResult = await attachArtifact({
+    db, deliverableId,
+    artifactUrl: "https://example.com/render/front-view.png",
+    artifactFormat: "png",
+    metadata: { views: 3, resolution: "1920x1080" }
+  });
+  assert(attachResult.ok, "attachArtifact succeeds");
+  assertEqual(attachResult.body.item.artifactUrl, "https://example.com/render/front-view.png", "artifact url set");
+  assertEqual(attachResult.body.item.artifactFormat, "png", "artifact format set");
+  assertEqual(attachResult.body.item.metadata.views, 3, "metadata views = 3");
+
+  const delivered = await transitionDeliverableStatus({ db, deliverableId, toStatus: DELIVERABLE_STATUS.DELIVERED });
+  assert(delivered.ok, "transition to delivered succeeds");
+
+  const stateResult = await getPackageDeliverableState({ db, engagementId });
+  assert(stateResult.ok, "getPackageDeliverableState succeeds");
+  assertEqual(stateResult.body.total, 6, "state total 6");
+  assert(stateResult.body.counts.delivered >= 1, "at least 1 delivered");
+
+  const notFoundD = await getDeliverable({ db, deliverableId: 999999 });
+  assert(!notFoundD.ok, "getDeliverable 999999 returns not found");
+
+  sqlite.close();
+}
+
+console.log("Revision workflow smoke");
+{
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(loadMigrationSql());
+  const db = makeD1(sqlite);
+
+  const ci = await db.prepare("INSERT INTO clients (name) VALUES (?)").bind("Ревизия Визуал").run();
+  const oi = await db.prepare("INSERT INTO orders (client_id) VALUES (?)").bind(ci.meta.last_row_id).run();
+  const orderId = oi.meta.last_row_id;
+
+  const created = await createEngagement({ db, orderId, packageCode: PACKAGE_CODES.PACKAGE_B });
+  const engagementId = created.body.item.id;
+  await seedEngagementDeliverables({ db, engagementId });
+
+  const listResult = await listEngagementDeliverables({ db, engagementId });
+  const deliverableId = listResult.body.items[0].id;
+
+  await transitionDeliverableStatus({ db, deliverableId, toStatus: DELIVERABLE_STATUS.IN_PROGRESS });
+  await transitionDeliverableStatus({ db, deliverableId, toStatus: DELIVERABLE_STATUS.READY });
+
+  const revRequest = await requestRevision({ db, deliverableId, requestNote: "Изменить цвет фасадов" });
+  assert(revRequest.ok, "requestRevision succeeds on ready deliverable");
+  assertEqual(revRequest.status, 201, "requestRevision returns 201");
+  assertEqual(revRequest.body.revisionNumber, 1, "first revision round");
+
+  const updatedDeliverable = await getDeliverable({ db, deliverableId });
+  assertEqual(updatedDeliverable.body.item.status, DELIVERABLE_STATUS.REVISION_REQUESTED, "deliverable is revision_requested");
+
+  const revList = await listDeliverableRevisions({ db, deliverableId });
+  assert(revList.ok, "listDeliverableRevisions succeeds");
+  assertEqual(revList.body.items.length, 1, "1 revision recorded");
+  assertEqual(revList.body.items[0].requestNote, "Изменить цвет фасадов", "revision note preserved");
+
+  const resolveResult = await resolveRevision({ db, deliverableId, revisionId: revRequest.body.revisionId, resolution: "Цвет изменён на белый" });
+  assert(resolveResult.ok, "resolveRevision succeeds");
+  assertEqual(resolveResult.body.item.status, DELIVERABLE_STATUS.IN_PROGRESS, "deliverable back to in_progress after resolve");
+
+  const secondRev = await requestRevision({ db, deliverableId, requestNote: "Вторая правка" });
+  assert(!secondRev.ok, "second revision on package_b is blocked (max 1)");
+  assertEqual(secondRev.status, 409, "revision limit returns 409");
+
+  const resolveTwice = await resolveRevision({ db, deliverableId, revisionId: revRequest.body.revisionId, resolution: "again" });
+  assert(!resolveTwice.ok, "resolving already-resolved revision fails");
+  assertEqual(resolveTwice.status, 409, "already resolved returns 409");
+
+  const pendingRevRequest = await requestRevision({ db, deliverableId: listResult.body.items[1].id, requestNote: "test" });
+  assert(!pendingRevRequest.ok, "requestRevision on pending deliverable fails");
+  assertEqual(pendingRevRequest.status, 409, "non-ready revision returns 409");
+
+  sqlite.close();
+}
+
+console.log("Deliverable state transitions smoke");
+{
+  assert(canTransitionDeliverable(DELIVERABLE_STATUS.PENDING, DELIVERABLE_STATUS.IN_PROGRESS), "pending -> in_progress");
+  assert(canTransitionDeliverable(DELIVERABLE_STATUS.IN_PROGRESS, DELIVERABLE_STATUS.READY), "in_progress -> ready");
+  assert(canTransitionDeliverable(DELIVERABLE_STATUS.READY, DELIVERABLE_STATUS.DELIVERED), "ready -> delivered");
+  assert(canTransitionDeliverable(DELIVERABLE_STATUS.READY, DELIVERABLE_STATUS.REVISION_REQUESTED), "ready -> revision_requested");
+  assert(canTransitionDeliverable(DELIVERABLE_STATUS.DELIVERED, DELIVERABLE_STATUS.REVISION_REQUESTED), "delivered -> revision_requested");
+  assert(canTransitionDeliverable(DELIVERABLE_STATUS.REVISION_REQUESTED, DELIVERABLE_STATUS.IN_PROGRESS), "revision_requested -> in_progress");
+  assert(!canTransitionDeliverable(DELIVERABLE_STATUS.PENDING, DELIVERABLE_STATUS.DELIVERED), "pending -> delivered is blocked");
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

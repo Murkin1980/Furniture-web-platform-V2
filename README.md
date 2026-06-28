@@ -50,9 +50,10 @@ V2 строится не вокруг базовой автоматизации,
 
 ## Статус
 
-Фаза 1 — Коммерческая упаковка: **завершена и задеплоена** ✅
+Фаза 2 — Управляемый визуал: **завершена и задеплоена** ✅
 Production: https://furniture-platform-v2.pages.dev · Admin: `/admin`
-API: packages, engagements, payments, message-templates, analytics (все 200).
-Smoke 104/104, миграции 0001+0002 (local + remote D1).
-Следующий шаг: Фаза 2 — Управляемый визуал (BW/Color deliverables).
+API: packages, engagements, payments, templates, analytics, deliverable-specs, deliverables (все 200).
+Smoke 167/167, миграции 0001–0003 (local + remote D1).
+Deliverable standards: BW preview (Package A), color multi-view + layout variants + inclusions sheet (Package B), revision workflow (1 раунд для Package B).
+Следующий шаг: Фаза 3 — PDF intake и полуавтоматическое проектирование.
 Подробности: `PROJECT_PROGRESS.md`.

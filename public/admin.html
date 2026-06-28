@@ -88,6 +88,7 @@
       <a data-view="payments">Платежи</a>
       <a data-view="templates">Шаблоны сообщений</a>
       <a data-view="analytics">Аналитика</a>
+      <a data-view="visual">Визуал (Deliverables)</a>
     </nav>
   </aside>
   <main>
@@ -129,6 +130,16 @@
     <div id="view-analytics" class="view hidden">
       <button id="btn-load-analytics">Загрузить аналитику</button>
       <div id="analytics-content"></div>
+    </div>
+    <div id="view-visual" class="view hidden">
+      <div class="row" style="margin-bottom:16px">
+        <label>Engagement ID<input type="number" id="vis-engagement-id" min="1" placeholder="№ engagement" /></label>
+        <button id="btn-load-deliverables">Загрузить</button>
+        <button id="btn-seed-deliverables" class="secondary">Создать deliverables</button>
+        <button id="btn-deliverable-state" class="secondary">Состояние пакета</button>
+      </div>
+      <div id="deliverable-state-box" class="card hidden"></div>
+      <div id="deliverable-list"></div>
     </div>
   </main>
   <div id="modal-overlay" class="modal-overlay hidden">

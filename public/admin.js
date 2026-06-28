@@ -64,7 +64,8 @@ function switchView(viewName) {
     engagements: ["Engagements", "Жизненный цикл пакетных engagements"],
     payments: ["Платежи", "Платёжные записи пакетов"],
     templates: ["Шаблоны сообщений", "Upsell-шаблоны для переходов между пакетами"],
-    analytics: ["Аналитика", "Конверсия воронки вовлечения"]
+    analytics: ["Аналитика", "Конверсия воронки вовлечения"],
+    visual: ["Визуал (Deliverables)", "Продуктовый стандарт выдачи результата"]
   };
   const [title, sub] = titles[viewName] || ["", ""];
   document.getElementById("view-title").textContent = title;
@@ -301,5 +302,126 @@ document.getElementById("btn-create-engagement").onclick = () => {
 document.getElementById("btn-load-payments").onclick = loadPayments;
 document.getElementById("btn-load-templates").onclick = loadTemplates;
 document.getElementById("btn-load-analytics").onclick = loadAnalytics;
+
+async function loadDeliverables() {
+  const engagementId = document.getElementById("vis-engagement-id").value;
+  if (!engagementId) return showStatus("Введите Engagement ID", "bad");
+  const { ok, data } = await api(`/orders/0/engagements/${engagementId}/deliverables`);
+  if (!ok) return showStatus(data.message || "Ошибка загрузки deliverables", "bad");
+  renderDeliverables(data.items || []);
+  showStatus(`Загружено ${data.items?.length || 0} deliverable(s)`, "ok");
+}
+
+function renderDeliverables(items) {
+  const el = document.getElementById("deliverable-list");
+  if (!items.length) { el.innerHTML = "<p class='sub'>Нет deliverables. Нажмите «Создать deliverables».</p>"; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Тип</th><th>Название</th><th>Статус</th><th>Артефакт</th><th>Действия</th></tr></thead>
+    <tbody>${items.map((d) => `<tr>
+      <td>${d.id}</td>
+      <td><code>${esc(d.deliverableType)}</code></td>
+      <td>${esc(d.label)}</td>
+      <td>${showBadge(d.status)}</td>
+      <td>${d.artifactUrl ? `<a href="${esc(d.artifactUrl)}" target="_blank">${esc(d.artifactFormat || "view")}</a>` : "<span class='muted'>—</span>"}</td>
+      <td>
+        <button class="secondary" onclick="window._deliverableAction(${d.id},'in_progress')">Start</button>
+        <button class="secondary" onclick="window._deliverableAction(${d.id},'ready')">Ready</button>
+        <button class="secondary" onclick="window._deliverableAction(${d.id},'delivered')">Deliver</button>
+        <button class="secondary" onclick="window._showAttachModal(${d.id})">Артефакт</button>
+        <button class="secondary" onclick="window._showRevisionModal(${d.id})">Правка</button>
+      </td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+window._deliverableAction = async (did, toStatus) => {
+  const { ok, data } = await api(`/deliverables/${did}`, { method: "PATCH", body: { toStatus } });
+  if (!ok) return showStatus(data.message || "Ошибка перехода статуса", "bad");
+  showStatus(`Deliverable #${did} → ${toStatus}`, "ok");
+  loadDeliverables();
+};
+
+window._showAttachModal = (did) => {
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Привязать артефакт к deliverable #${did}</h2>
+    <label>URL артефакта<input type="text" id="att-url" placeholder="https://..." /></label>
+    <label>Формат
+      <select id="att-format">
+        <option value="png">png</option>
+        <option value="jpeg">jpeg</option>
+        <option value="pdf">pdf</option>
+        <option value="html">html</option>
+        <option value="svg">svg</option>
+      </select>
+    </label>
+    <label>Metadata (JSON, optional)<textarea id="att-meta" placeholder='{"views":3}'></textarea></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-attach">Привязать</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-attach").onclick = async () => {
+    const url = document.getElementById("att-url").value;
+    const format = document.getElementById("att-format").value;
+    let metadata = null;
+    try { metadata = JSON.parse(document.getElementById("att-meta").value || "{}"); } catch { metadata = null; }
+    const { ok, data } = await api(`/deliverables/${did}`, { method: "PATCH", body: { action: "attach", artifactUrl: url, artifactFormat: format, metadata } });
+    if (!ok) return showStatus(data.message || "Ошибка привязки", "bad");
+    showStatus(`Артефакт привязан к deliverable #${did}`, "ok");
+    window._closeModal();
+    loadDeliverables();
+  };
+};
+
+window._showRevisionModal = (did) => {
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Запросить правку для deliverable #${did}</h2>
+    <p class="sub">Доступно только для ready/delivered. Списывает один раунд корректировок с engagement.</p>
+    <label>Комментарий к правке<textarea id="rev-note" placeholder="Что нужно изменить"></textarea></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-revision">Запросить</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-revision").onclick = async () => {
+    const note = document.getElementById("rev-note").value;
+    const { ok, data } = await api(`/deliverables/${did}`, { method: "PATCH", body: { action: "request_revision", requestNote: note } });
+    if (!ok) return showStatus(data.message || "Ошибка запроса правки", "bad");
+    showStatus(`Правка #${data.revisionNumber} запрошена для deliverable #${did}`, "ok");
+    window._closeModal();
+    loadDeliverables();
+  };
+};
+
+async function seedDeliverables() {
+  const engagementId = document.getElementById("vis-engagement-id").value;
+  if (!engagementId) return showStatus("Введите Engagement ID", "bad");
+  const { ok, data } = await api(`/orders/0/engagements/${engagementId}/deliverables`, { method: "POST" });
+  if (!ok) return showStatus(data.message || "Ошибка создания deliverables", "bad");
+  showStatus(`Создано ${data.seeded} deliverable(s)`, "ok");
+  loadDeliverables();
+}
+
+async function loadDeliverableState() {
+  const engagementId = document.getElementById("vis-engagement-id").value;
+  if (!engagementId) return showStatus("Введите Engagement ID", "bad");
+  const { ok, data } = await api(`/orders/0/engagements/${engagementId}/deliverables?state=true`);
+  if (!ok) return showStatus(data.message || "Ошибка получения состояния", "bad");
+  const box = document.getElementById("deliverable-state-box");
+  box.classList.remove("hidden");
+  const stateLabels = {
+    empty: "Пусто", not_seeded: "Deliverables не созданы", all_pending: "Все pending",
+    in_progress: "В работе", has_ready: "Есть готовые", all_delivered: "Все доставлены",
+    revision_in_progress: "Идёт правка"
+  };
+  box.innerHTML = `<h2 style="margin:0 0 8px">Состояние пакета: <strong>${stateLabels[data.packageState] || data.packageState}</strong></h2>
+    <div class="sub">Всего: ${data.total} · Доставлено: ${data.counts.delivered || 0} · Готово: ${data.counts.ready || 0} · В работе: ${data.counts.in_progress || 0} · Правок: ${data.counts.revision_requested || 0}</div>`;
+}
+
+document.getElementById("btn-load-deliverables").onclick = loadDeliverables;
+document.getElementById("btn-seed-deliverables").onclick = seedDeliverables;
+document.getElementById("btn-deliverable-state").onclick = loadDeliverableState;
 
 switchView("packages");
