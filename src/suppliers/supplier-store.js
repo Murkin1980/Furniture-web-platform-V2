@@ -154,6 +154,9 @@ export async function publishPriceList({ db, priceListId, effectiveFrom, effecti
 
   try {
     await db.prepare(
+      `UPDATE supplier_price_lists SET status = 'archived', updated_at = CURRENT_TIMESTAMP WHERE supplier_id = ? AND status = 'published' AND id != ?`
+    ).bind(priceList.body.item.supplierId, id).run();
+    await db.prepare(
       `UPDATE supplier_price_lists SET status = 'published', published_at = CURRENT_TIMESTAMP, effective_from = ?, effective_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'draft'`
     ).bind(str(effectiveFrom) || null, str(effectiveTo) || null, id).run();
     return getPriceList({ db, priceListId: id });

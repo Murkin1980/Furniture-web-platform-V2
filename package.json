@@ -4,16 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/auth.js && node --check src/packages/package-catalog.js && node --check src/packages/package-store.js && node --check src/packages/credit-on-order.js && node --check src/packages/message-templates.js && node --check src/packages/package-analytics.js && node --check src/packages/payment-store.js && node --check src/packages/visual-standards.js && node --check src/packages/deliverable-store.js && node --check src/pdf/pdf-manifest.js && node --check src/pdf/pdf-store.js && node --check functions/api/packages.js && node --check functions/api/message-templates.js && node --check functions/api/analytics.js && node --check functions/api/payments.js && node --check functions/api/payments/[pid].js && node --check functions/api/deliverable-specs.js && node --check functions/api/deliverables/[did].js && node --check functions/api/orders/[id]/engagements.js && node --check functions/api/orders/[id]/engagements/[eid].js && node --check functions/api/orders/[id]/engagements/[eid]/deliverables.js && node --check functions/api/orders/[id]/pdf/uploads.js && node --check functions/api/orders/[id]/pdf/drafts.js",
+    "check": "node --check src/auth.js && node --check src/packages/package-catalog.js && node --check src/packages/package-store.js && node --check src/packages/credit-on-order.js && node --check src/packages/message-templates.js && node --check src/packages/package-analytics.js && node --check src/packages/payment-store.js && node --check src/packages/visual-standards.js && node --check src/packages/deliverable-store.js && node --check src/pdf/pdf-manifest.js && node --check src/pdf/pdf-store.js && node --check src/suppliers/supplier-catalog.js && node --check src/suppliers/supplier-store.js && node --check functions/api/packages.js && node --check functions/api/message-templates.js && node --check functions/api/analytics.js && node --check functions/api/payments.js && node --check functions/api/payments/[pid].js && node --check functions/api/deliverable-specs.js && node --check functions/api/deliverables/[did].js && node --check functions/api/orders/[id]/engagements.js && node --check functions/api/orders/[id]/engagements/[eid].js && node --check functions/api/orders/[id]/engagements/[eid]/deliverables.js && node --check functions/api/orders/[id]/pdf/uploads.js && node --check functions/api/orders/[id]/pdf/drafts.js && node --check functions/api/suppliers.js && node --check functions/api/suppliers/[sid]/price-lists.js",
     "test": "node --test",
     "dev": "wrangler pages dev public --binding RUNTIME_SCHEMA_INIT=true --binding ADMIN_TOKEN=dev-admin-token --compatibility-date=2026-06-28 --persist-to=.wrangler/state",
     "deploy": "wrangler pages deploy public --project-name=furniture-platform-v2",
     "db:create": "wrangler d1 create furniture-platform-v2",
     "db:migrate:local": "wrangler d1 migrations apply furniture-platform-v2 --local",
     "db:migrate:remote": "wrangler d1 migrations apply furniture-platform-v2 --remote",
-    "smoke:packages": "node scripts/package-lifecycle-smoke.mjs"
+    "smoke:packages": "node scripts/package-lifecycle-smoke.mjs",
+    "smoke:suppliers": "node scripts/supplier-smoke.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "wrangler": "^4.95.0"
   }
 }
