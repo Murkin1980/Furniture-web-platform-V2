@@ -50,7 +50,8 @@ V2 строится не вокруг базовой автоматизации,
 
 ## Статус
 
-Фаза 1 — Коммерческая упаковка: 1.1 Product/Package model завершён (20% фазы).
-Миграция 0001 применена (local D1), package lifecycle smoke 64/64.
+Фаза 1 — Коммерческая упаковка: 1.1 Product/Package model завершён и задеплоен (20% фазы).
+Production: https://furniture-platform-v2.pages.dev · API: `GET /api/packages` (200).
+Миграция 0001 применена (local + remote D1), package lifecycle smoke 64/64.
 Следующий шаг: 1.2 — менеджерский UI и шаблоны сообщений.
 Подробности: `PROJECT_PROGRESS.md`.

@@ -25,10 +25,11 @@
 - [ ] Дашборд конверсии воронки вовлечения
 
 ### 1.4 Smoke и проверки фазы 1
-- [x] Миграции применены
+- [x] Миграции применены (local + remote D1)
 - [x] Package lifecycle smoke (create → pay → credit-on-order → order) — 64/64 passed
+- [x] Production API smoke (GET /api/packages 200)
 - [ ] Analytics pipeline smoke
-- [ ] README и PROJECT_PROGRESS обновлены
+- [x] README и PROJECT_PROGRESS обновлены
 
 ## Фаза 2 — Управляемый визуал
 

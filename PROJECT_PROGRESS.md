@@ -10,8 +10,8 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 |---|---|
 | Этап | Фаза 1 — Коммерческая упаковка |
 | Процент готовности | 20% |
-| Последний commit | (этот коммит: Phase 1.1 product/package model) |
-| Deploy | local D1 миграция применена; remote не настроен |
+| Последний commit | 1bc1571 — fix import depth |
+| Deploy | production: https://furniture-platform-v2.pages.dev |
 | Следующий шаг | 1.2 Коммерческая упаковка пакетов: шаблоны сообщений, менеджерский UI |
 
 ## Архитектурные решения V2
@@ -49,13 +49,15 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 |---|---|---|---|
 | 2026-06-28 | Подготовка | Инициализация репозитория V2, roadmap, чек-лист, файлы прогресса | Репозиторий готов к началу Фазы 1 |
 | 2026-06-28 | Фаза 1.1 | product/package model: миграция 0001, catalog/store/credit core, API routes, smoke 64/64 | Phase 1.1 завершён |
+| 2026-06-28 | Деплой | D1 remote миграция, Pages project создан, ADMIN_TOKEN секрет, импорт-фикс | Production: furniture-platform-v2.pages.dev, API 200 |
 
 ## Проверки
 
 | Проверка | Статус | Дата |
 |---|---|---|
-| Миграции Фазы 1 (0001) | ✅ local | 2026-06-28 |
+| Миграции Фазы 1 (0001) | ✅ local + remote | 2026-06-28 |
 | Package lifecycle smoke | ✅ 64/64 | 2026-06-28 |
+| Production API smoke | ✅ GET /api/packages 200 | 2026-06-28 |
 | Analytics pipeline smoke | — | — |
 
 ## Риски и запреты

@@ -49,8 +49,8 @@
   <div class="grid">
     <div class="card"><div class="k">Текущий этап</div><div class="v">Фаза 1 — Коммерческая упаковка</div></div>
     <div class="card"><div class="k">Готовность</div><div class="v">20%</div></div>
-    <div class="card"><div class="k">Последний commit</div><div class="v">Phase 1.1 — product/package model</div></div>
-    <div class="card"><div class="k">Deploy</div><div class="v muted">local D1; remote не настроен</div></div>
+    <div class="card"><div class="k">Последний commit</div><div class="v">1bc1571 — fix import depth</div></div>
+    <div class="card"><div class="k">Deploy</div><div class="v"><a href="https://furniture-platform-v2.pages.dev">production</a></div></div>
   </div>
 
   <div class="legend">
@@ -73,8 +73,9 @@
     <table>
       <thead><tr><th>Проверка</th><th>Статус</th><th>Дата</th></tr></thead>
       <tbody>
-        <tr><td>Миграции Фазы 1 (0001)</td><td><span class="badge done">✅ local</span></td><td>2026-06-28</td></tr>
+        <tr><td>Миграции Фазы 1 (0001)</td><td><span class="badge done">✅ local + remote</span></td><td>2026-06-28</td></tr>
         <tr><td>Package lifecycle smoke</td><td><span class="badge done">✅ 64/64</span></td><td>2026-06-28</td></tr>
+        <tr><td>Production API smoke</td><td><span class="badge done">✅ GET /api/packages 200</span></td><td>2026-06-28</td></tr>
         <tr><td>Analytics pipeline smoke</td><td class="muted">—</td><td class="muted">—</td></tr>
       </tbody>
     </table>
@@ -87,6 +88,7 @@
       <tbody>
         <tr><td>2026-06-28</td><td>Подготовка</td><td>Инициализация репозитория V2, roadmap, чек-лист, файлы прогресса</td><td>Репозиторий готов к началу Фазы 1</td></tr>
         <tr><td>2026-06-28</td><td>Фаза 1.1</td><td>product/package model: миграция 0001, catalog/store/credit core, API routes, smoke 64/64</td><td>Phase 1.1 завершён</td></tr>
+        <tr><td>2026-06-28</td><td>Деплой</td><td>D1 remote миграция, Pages project создан, ADMIN_TOKEN секрет, импорт-фикс</td><td>Production: furniture-platform-v2.pages.dev, API 200</td></tr>
       </tbody>
     </table>
   </div>
