@@ -5,7 +5,9 @@ const state = {
   packages: [],
   engagements: [],
   payments: [],
-  templates: []
+  templates: [],
+  suppliers: [],
+  selectedSupplierId: null
 };
 
 function getToken() {
@@ -66,7 +68,8 @@ function switchView(viewName) {
     templates: ["Шаблоны сообщений", "Upsell-шаблоны для переходов между пакетами"],
     analytics: ["Аналитика", "Конверсия воронки вовлечения"],
     visual: ["Визуал (Deliverables)", "Продуктовый стандарт выдачи результата"],
-    pdf: ["PDF Intake", "Полуавтоматическое проектирование из клиентских PDF"]
+    pdf: ["PDF Intake", "Полуавтоматическое проектирование из клиентских PDF"],
+    suppliers: ["Поставщики", "Каталог поставщиков и прайс-листов"]
   };
   const [title, sub] = titles[viewName] || ["", ""];
   document.getElementById("view-title").textContent = title;
@@ -527,5 +530,134 @@ window._createDraft = async () => {
 document.getElementById("btn-load-pdf").onclick = loadPdf;
 document.getElementById("btn-upload-pdf").onclick = () => window._uploadPdf();
 document.getElementById("btn-create-draft").onclick = () => window._createDraft();
+
+/* ── Suppliers ── */
+
+async function loadSuppliers() {
+  const { ok, data } = await api("/suppliers");
+  if (!ok) return showStatus(data.message || "Ошибка загрузки поставщиков", "bad");
+  state.suppliers = data.items || [];
+  renderSuppliers();
+  showStatus(`Загружено ${state.suppliers.length} поставщик(ов)`, "ok");
+}
+
+function renderSuppliers() {
+  const el = document.getElementById("supplier-list");
+  if (!state.suppliers.length) { el.innerHTML = "<p class='sub'>Нет поставщиков</p>"; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Код</th><th>Название</th><th>Контакт</th><th>Телефон</th><th>Статус</th><th>Действия</th></tr></thead>
+    <tbody>${state.suppliers.map((s) => `<tr>
+      <td>${s.id}</td>
+      <td><code>${esc(s.code)}</code></td>
+      <td>${esc(s.name)}</td>
+      <td>${esc(s.contact || "—")}</td>
+      <td>${esc(s.phone || "—")}</td>
+      <td>${s.isActive ? showBadge("active") : showBadge("inactive")}</td>
+      <td><button class="secondary" onclick="window._selectSupplier(${s.id},'${esc(s.name)}')">Прайс-листы</button></td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+window._selectSupplier = async (supplierId, name) => {
+  state.selectedSupplierId = supplierId;
+  document.getElementById("supplier-detail").classList.remove("hidden");
+  document.getElementById("supplier-detail-title").textContent = `Прайс-листы — ${name}`;
+  loadPriceLists();
+};
+
+async function loadPriceLists() {
+  const sid = state.selectedSupplierId;
+  if (!sid) return;
+  const { ok, data } = await api(`/suppliers/${sid}/price-lists`);
+  if (!ok) return showStatus(data.message || "Ошибка загрузки прайс-листов", "bad");
+  renderPriceLists(data.items || []);
+}
+
+function renderPriceLists(items) {
+  const el = document.getElementById("price-list-container");
+  if (!items.length) { el.innerHTML = "<p class='sub'>Нет прайс-листов</p>"; return; }
+  el.innerHTML = items.map((pl) => `<div class="pkg-card">
+    <h3>Версия ${pl.versionNumber} ${showBadge(pl.status)}</h3>
+    <div class="sub">ID: ${pl.id} · Создан: ${esc(pl.createdAt || "—")} · Действует с: ${esc(pl.effectiveFrom || "—")}</div>
+    <div class="row" style="margin-top:10px">
+      ${pl.status === "draft" ? `<button class="secondary" onclick="window._publishPriceList(${pl.id})">Опубликовать</button>` : ""}
+      ${pl.status === "published" ? `<button class="secondary" onclick="window._archivePriceList(${pl.id})">Архивировать</button>` : ""}
+      <button class="secondary" onclick="window._loadPriceItems(${pl.id})">Позиции</button>
+    </div>
+    <div id="price-items-${pl.id}" style="margin-top:10px"></div>
+  </div>`).join("");
+}
+
+window._publishPriceList = async (plId) => {
+  const effectiveFrom = prompt("Дата вступления в силу (YYYY-MM-DD):") || "";
+  const { ok, data } = await api(`/suppliers/${state.selectedSupplierId}/price-lists/${plId}`, { method: "POST", body: { action: "publish", effectiveFrom } });
+  if (!ok) return showStatus(data.message || "Ошибка публикации", "bad");
+  showStatus(`Прайс-лист #${plId} опубликован`, "ok");
+  loadPriceLists();
+};
+
+window._archivePriceList = async (plId) => {
+  if (!confirm(`Архивировать прайс-лист #${plId}?`)) return;
+  const { ok, data } = await api(`/suppliers/${state.selectedSupplierId}/price-lists/${plId}`, { method: "POST", body: { action: "archive" } });
+  if (!ok) return showStatus(data.message || "Ошибка архивации", "bad");
+  showStatus(`Прайс-лист #${plId} архивирован`, "ok");
+  loadPriceLists();
+};
+
+window._loadPriceItems = async (plId) => {
+  const { ok, data } = await api(`/suppliers/${state.selectedSupplierId}/price-lists/${plId}`);
+  if (!ok) return showStatus(data.message || "Ошибка загрузки позиций", "bad");
+  const el = document.getElementById(`price-items-${plId}`);
+  const items = data.item?.items || [];
+  if (!items.length) { el.innerHTML = "<p class='sub' style='margin:0'>Нет позиций</p>"; return; }
+  el.innerHTML = `<table><thead><tr><th>Тип</th><th>Материал</th><th>Базовая</th><th>За единицу</th><th>Ед.</th></tr></thead>
+    <tbody>${items.map((i) => `<tr><td><code>${esc(i.furnitureType)}</code></td><td>${esc(i.material)}</td><td>${fmtMoney(i.basePriceKzt)}</td><td>${fmtMoney(i.unitPriceKzt)}</td><td>${esc(i.unit)}</td></tr>`).join("")}</tbody></table>`;
+};
+
+window._createPriceList = async () => {
+  const sid = state.selectedSupplierId;
+  if (!sid) return showStatus("Выберите поставщика", "bad");
+  const note = prompt("Примечание к прайс-листу:") || "";
+  const { ok, data } = await api(`/suppliers/${sid}/price-lists`, { method: "POST", body: { note } });
+  if (!ok) return showStatus(data.message || "Ошибка создания прайс-листа", "bad");
+  showStatus(`Прайс-лист #${data.item.id} создан`, "ok");
+  loadPriceLists();
+};
+
+window._createSupplier = async () => {
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Добавить поставщика</h2>
+    <label>Код<input type="text" id="sup-code" placeholder="SUP001" /></label>
+    <label>Название<input type="text" id="sup-name" placeholder="Фурнитура Плюс" /></label>
+    <label>Контактное лицо<input type="text" id="sup-contact" placeholder="Иван Иванов" /></label>
+    <label>Телефон<input type="text" id="sup-phone" placeholder="+7 700 123 4567" /></label>
+    <label>Email<input type="text" id="sup-email" placeholder="info@example.com" /></label>
+    <label>Примечание<textarea id="sup-note" placeholder="Оптовый поставщик фурнитуры"></textarea></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-create-supplier">Создать</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-create-supplier").onclick = async () => {
+    const { ok, data } = await api("/suppliers", { method: "POST", body: {
+      code: document.getElementById("sup-code").value,
+      name: document.getElementById("sup-name").value,
+      contact: document.getElementById("sup-contact").value,
+      phone: document.getElementById("sup-phone").value,
+      email: document.getElementById("sup-email").value,
+      note: document.getElementById("sup-note").value
+    }});
+    if (!ok) return showStatus(data.message || "Ошибка создания поставщика", "bad");
+    showStatus(`Поставщик #${data.item.id} создан`, "ok");
+    window._closeModal();
+    loadSuppliers();
+  };
+};
+
+document.getElementById("btn-load-suppliers").onclick = loadSuppliers;
+document.getElementById("btn-create-supplier").onclick = () => window._createSupplier();
+document.getElementById("btn-create-price-list").onclick = () => window._createPriceList();
+document.getElementById("btn-load-price-lists").onclick = loadPriceLists;
 
 switchView("packages");

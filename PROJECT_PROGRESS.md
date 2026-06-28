@@ -8,11 +8,11 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 
 | Параметр | Значение |
 |---|---|
-| Этап | Фаза 3 — PDF intake (завершена) |
-| Процент готовности | 100% фазы 3 (60% общий) |
-| Последний commit | (этот коммит: Phase 3 PDF intake) |
+| Этап | Фаза 4 — Supplier-aware pricing (завершена) |
+| Процент готовности | 80% общий |
+| Последний commit | Phase 4 supplier pricing |
 | Deploy | production: https://furniture-platform-v2.pages.dev |
-| Следующий шаг | Фаза 4 — Supplier-aware pricing |
+| Следующий шаг | Фаза 5 — Controlled 3D upgrade |
 
 ## Архитектурные решения V2
 
@@ -47,7 +47,12 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 - 3.5 Smoke + деплой — 100% (244/244, production API 200)
 
 ### Фаза 4 — Supplier-aware pricing
-- Статус: не начата — 0%
+- Статус: завершена ✅
+- 4.1 Supplier catalog + price list model + миграция 0005 — 100%
+- 4.2 Supplier price items + versioned price lists — 100%
+- 4.3 Supplier-aware estimate generation — 100%
+- 4.4 Admin UI suppliers section — 100%
+- 4.5 Smoke + деплой — 100% (318/318, production API 200)
 
 ### Фаза 5 — Controlled 3D upgrade
 - Статус: не начата — 0%
@@ -62,15 +67,17 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 | 2026-06-28 | Фаза 1.2 | message templates, payment store, analytics, admin UI, миграция 0002 | Фаза 1 завершена, smoke 104/104 |
 | 2026-06-28 | Фаза 2 | visual standards, deliverable store, revision workflow, admin UI, миграция 0003 | Фаза 2 завершена, smoke 167/167 |
 | 2026-06-28 | Фаза 3 | PDF intake: manifest v2, upload/draft/estimate store, review gate, admin UI, миграция 0004 | Фаза 3 завершена, smoke 244/244 |
+| 2026-06-28 | Фаза 4 | Supplier pricing: catalog, versioned price lists, supplier-aware estimates, admin UI, миграция 0005 | Фаза 4 завершена, smoke 318/318 |
 
 ## Проверки
 
 | Проверка | Статус | Дата |
 |---|---|---|
-| Миграции (0001–0004) | ✅ local + remote | 2026-06-28 |
-| Package lifecycle smoke | ✅ 244/244 | 2026-06-28 |
+| Миграции (0001–0005) | ✅ local + remote | 2026-06-28 |
+| Package lifecycle smoke | ✅ 318/318 | 2026-06-28 |
 | Production API smoke | ✅ all endpoints 200 | 2026-06-28 |
 | PDF intake smoke | ✅ upload → draft → review → estimate | 2026-06-28 |
+| Supplier pricing smoke | ✅ catalog → price lists → supplier estimates | 2026-06-28 |
 | Visual progress dashboard | ✅ /progress | 2026-06-28 |
 
 ## Риски и запреты

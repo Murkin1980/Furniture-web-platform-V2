@@ -90,6 +90,7 @@
       <a data-view="analytics">Аналитика</a>
       <a data-view="visual">Визуал (Deliverables)</a>
       <a data-view="pdf">PDF Intake</a>
+      <a data-view="suppliers">Поставщики</a>
     </nav>
   </aside>
   <main>
@@ -153,6 +154,21 @@
       <div id="pdf-upload-list"></div>
       <h2>Drafts</h2>
       <div id="pdf-draft-list"></div>
+    </div>
+    <div id="view-suppliers" class="view hidden">
+      <div class="row" style="margin-bottom:16px">
+        <button id="btn-load-suppliers">Загрузить поставщиков</button>
+        <button id="btn-create-supplier" class="secondary">Добавить поставщика</button>
+      </div>
+      <div id="supplier-list"></div>
+      <div id="supplier-detail" class="hidden">
+        <h2 id="supplier-detail-title">Price List</h2>
+        <div class="row" style="margin-bottom:12px">
+          <button id="btn-create-price-list" class="secondary">Новый прайс</button>
+          <button id="btn-load-price-lists" class="secondary">Обновить</button>
+        </div>
+        <div id="price-list-container"></div>
+      </div>
     </div>
   </main>
   <div id="modal-overlay" class="modal-overlay hidden">
