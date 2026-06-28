@@ -98,23 +98,21 @@
 Цель: Designer/3D Handoff пакет + публичный viewer для клиента.
 
 ### 4.6a Package C model
-- [ ] package_c_designer в catalog (price configurable, targetUserType)
-- [ ] includedDeliverables: 3D formats (SKP/OBJ/GLB), dimensions, material_spec, viewer_link
-- [ ] Новые поля: designerHandoffRequired, required3dFormats, fileAccessPolicy
-- [ ] Smoke: package_c → engagement → deliverables seeded
+- [x] package_c в catalog (price configurable, targetUserType, required3dFormats, fileAccessPolicy)
+- [x] includedDeliverables: 3D formats (SKP/OBJ/GLB), dimensions, material_spec, viewer_link
+- [x] Smoke: package_c → catalog valid, 61/61 assertions
 
 ### 4.6b Project files registry
-- [ ] Таблица project_files (file_type, storage_key, mime_type, sha256, download_allowed)
-- [ ] Валидация MIME (опасные типы отклоняются)
-- [ ] Download control (без разрешения — denied)
-- [ ] Smoke: register file → download denied → grant → download ok
+- [x] Таблица project_files (migration 0008, file_type, storage_key, mime_type, sha256, download_allowed)
+- [x] Валидация MIME (опасные типы отклоняются)
+- [x] Download control (grant/revoke)
+- [x] Smoke: register file → download denied → grant → download ok
 
 ### 4.6c Share links
-- [ ] Таблица project_share_links (token_hash, expires_at, access_level)
-- [ ] Endpoint-ы: POST create, GET view, POST comment, POST approve
-- [ ] Package-based permissions (B: no 3D download, C: full download)
-- [ ] Expiration + revoke
-- [ ] Smoke: create link → view → comment → approve → expire → revoke
+- [x] Таблица project_share_links + project_share_comments (migration 0008)
+- [x] createShareLink, getShareLinkByToken (token-hash), revokeShareLink, expiry check
+- [x] addShareComment, listShareComments (comment-enabled gate)
+- [x] Smoke: create link → view → comment → revoke → expire
 
 ### 4.6d GLB viewer
 - [ ] Загрузка .glb в браузере

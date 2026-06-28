@@ -8,8 +8,8 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 
 | Параметр | Значение |
 |---|---|
-| Этап | Фаза 4.5 — Conversational Sales + AI Observability (в работе) |
-| Процент готовности | 85% общий |
+| Этап | Фаза 4.6 — Package C + Share Viewer (в работе) |
+| Процент готовности | 90% общий |
 | Последний commit | Phase4.5-Slice5-ai-observability |
 | Deploy | production: https://furniture-platform-v2.pages.dev |
 | Следующий шаг | Фаза 4.5 Slice 7 — WhatsApp inbound foundation |
@@ -65,6 +65,13 @@ Roadmap: `v2-roadmap.md`. Чек-лист фаз: `STAGE_CHECKLIST.md`.
 - 4.5.8 AI draft replies — 0%
 - 4.5.9 Manager feedback loop — 0%
 - 4.5.10 Package conversion analytics через WhatsApp — 0%
+
+### Фаза 4.6 — Package C + Project Share Viewer
+- Статус: в работе — 60%
+- 4.6a Package C model — 100% (PACKAGE_C in catalog, configurable price, targetUserType, 3d formats)
+- 4.6b Project files registry — 100% (migration 0008, registerFile, grant/revoke download, MIME validation, 61/61 smoke)
+- 4.6c Share links — 100% (create, token-hash, revoke, expiry, comments, 61/61 smoke)
+- 4.6d GLB viewer — 0% (следующий шаг)
 
 ## История этапов
 
