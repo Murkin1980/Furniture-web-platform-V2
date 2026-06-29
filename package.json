@@ -20,7 +20,9 @@
     "smoke:ai": "npm run smoke:ai -w @furniture/mvp",
     "smoke:whatsapp": "npm run smoke:whatsapp -w @furniture/mvp",
     "smoke:project": "npm run smoke:project -w @furniture/mvp",
-    "smoke:orchestrator": "npm run smoke -w @furniture/orchestrator"
+    "smoke:orchestrator": "npm run smoke -w @furniture/orchestrator",
+    "smoke:e2e": "npm run smoke:e2e -w @furniture/orchestrator",
+    "smoke:all": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor && npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

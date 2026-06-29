@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/intake/intake-router.js && node --check src/orchestration/process-tracker.js && node --check src/extraction/extractor.js && node --check src/clarification/clarifier.js",
-    "smoke": "node --experimental-sqlite scripts/orchestrator-smoke.mjs"
+    "check": "node --check src/intake/intake-router.js && node --check src/orchestration/process-tracker.js && node --check src/extraction/extractor.js && node --check src/clarification/clarifier.js && node --check src/bridge/mvp-bridge.js && node --check src/handlers/multi-modal.js",
+    "smoke": "node scripts/orchestrator-smoke.mjs",
+    "smoke:e2e": "node scripts/e2e-orchestration-smoke.mjs",
+    "smoke:all": "node scripts/orchestrator-smoke.mjs && node scripts/e2e-orchestration-smoke.mjs"
   },
   "dependencies": {
     "@furniture/shared": "workspace:*"
