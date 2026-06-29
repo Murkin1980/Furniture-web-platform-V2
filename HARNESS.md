@@ -1,17 +1,44 @@
 # HARNESS.md
 
 ## Назначение проекта
-Этот репозиторий содержит v2 AI-first платформы для приёма и обработки мебельных заказов.
-Главная цель системы — принимать разнородные входные данные от клиента (текст, голосовые сообщения, эскизы от руки, дизайнерские планы), извлекать из них максимум полезной информации, задавать только минимально необходимые уточнения и передавать структурированный результат в downstream-процессы: CRM, калькуляторы, КП, трекинг статусов и дальнейшую генерацию материалов.[cite:10][cite:16]
+Этот репозиторий содержит AI-first платформу для приёма и обработки мебельных заказов.
+Главная цель системы — принимать разнородные входные данные от клиента (текст, голосовые сообщения, эскизы от руки, дизайнерские планы), извлекать из них максимум полезной информации, задавать только минимально необходимые уточнения и передавать структурированный результат в downstream-процессы: CRM, калькуляторы, КП, трекинг статусов и дальнейшую генерацию материалов.
 
-Этот репозиторий не является общим sandbox для любых идей. Он предназначен для развития конкретного продуктового потока AI-first intake + orchestration layer поверх мебельного бизнес-процесса.[cite:10][cite:17]
+Этот репозиторий не является общим sandbox для любых идей. Он предназначен для развития конкретного продуктового потока AI-first intake + orchestration layer поверх мебельного бизнес-процесса.
 
-## Продуктовые принципы
-- Сначала понять входные данные, потом задавать вопросы.
-- Уточняющие вопросы должны быть минимальными, адресными и только по критически недостающим данным.[cite:10][cite:16]
-- Оркестратор не должен перекладывать работу понимания входа на клиента.
-- Все фоновые процессы (CRM, КП, расчёты, трекинг, генерация документов) должны запускаться после первичного понимания заказа, а не до него.[cite:10]
-- Любое изменение должно сохранять ориентацию на реальный мебельный workflow, а не на абстрактную demo-архитектуру.
+## Монорепозиторий — структура
+
+Репозиторий организован как npm workspaces monorepo:
+
+```
+Platform V2/
+├── package.json              # root workspaces config
+├── HARNESS.md                # этот файл
+├── wrangler.toml             # Cloudflare Pages config
+├── scripts/build.mjs         # build step assembly для деплоя
+├── docs/decisions/           # ADR лог
+├── packages/
+│   ├── mvp/                  # текущий MVP (packages, PDF, suppliers, AI, WhatsApp, projects)
+│   │   ├── package.json
+│   │   ├── src/              # business logic модули
+│   │   ├── functions/        # Cloudflare Pages Functions (API routes)
+│   │   ├── public/           # статические файлы и admin UI
+│   │   ├── migrations/       # D1 SQL миграции (0001–0008)
+│   │   └── scripts/          # smoke тесты MVP
+│   ├── shared/               # общие модули (package-catalog, ai-observability, whatsapp)
+│   │   ├── package.json
+│   │   └── src/
+│   └── orchestrator/         # новый AI-first orchestration layer
+│       ├── package.json
+│       ├── src/
+│       │   ├── intake/       # multi-modal input handler + router
+│       │   ├── orchestration/# process tracking, state machine
+│       │   ├── extraction/   # structured data extraction pipelines
+│       │   └── clarification/# minimal question loop
+│       ├── functions/        # orchestrator API routes
+│       ├── migrations/       # orchestration D1 tables (0009+)
+│       └── scripts/          # orchestrator smoke тесты
+```
 
 ## Архитектурный контекст
 Текущий стек проекта:
@@ -20,41 +47,67 @@
 - Cloudflare R2 (хранилище файлов)
 - Vanilla JavaScript (ES modules, без TypeScript, без bundler)
 - Node.js 22 + `node:sqlite` для smoke-тестов
+- npm workspaces для монорепозитория
 
 Система строится вокруг orchestration layer, который сначала классифицирует тип входа и определяет, какой инструмент платформы должен быть вызван дальше: AI extraction, PDF intelligence, calculators, proposal generation и другие специализированные модули.
 
+## Пакеты
+
+### @furniture/mvp
+Текущий MVP с бизнес-логикой:
+- `src/packages/` — пакеты услуг, кредитование, аналитика, шаблоны, статусы, deliverables
+- `src/pdf/` — PDF intake, манифесты, черновики, размеры, КП из PDF
+- `src/suppliers/` — каталог поставщиков, версионные прайс-листы, расчёт сметы
+- `src/ai/` — AI package advisor, AI observability
+- `src/whatsapp/` — WhatsApp inbound, нормализация, переписки
+- `src/projects/` — project files, share links, comments
+
+### @furniture/shared
+Общие модули, переиспользуемые пакетами:
+- `src/package-catalog.js` — каталог пакетов, типы, валидаторы
+- `src/ai-observability.js` — AI runs, actions, feedback
+- `src/whatsapp/` — normalize-message, conversation-store
+
+### @furniture/orchestrator
+Новый AI-first orchestration layer:
+- `src/intake/` — classifyModality, routeIntake, INPUT_MODALITY, ROUTE_ACTION
+- `src/orchestration/` — process tracking, state machine, steps audit
+- `src/extraction/` — extraction pipelines (text, image, audio, PDF, multi-modal)
+- `src/clarification/` — minimal question loop, priority, response handling
+
 ## Основные домены системы
 Ключевые домены, которые нужно понимать перед изменениями:
-- Intake — приём входных данных клиента.
-- Orchestration — маршрутизация, статусы, шаги процесса, policy принятия решений.
-- AI extraction — извлечение сущностей и структуры заказа.
-- Clarification — минимальный цикл уточнений при нехватке критичных данных.
-- CRM bridge — передача результата в CRM и бизнес-процессы.
-- Calculators — расчёты стоимости, сметы, параметров проекта.
-- Proposal/document generation — формирование КП и сопутствующих материалов.
-- Process tracking — отслеживание статусов, SLA, timeline и progress dashboard.[cite:10][cite:16][cite:17]
+- Intake — приём входных данных клиента (текст, аудио, изображения, PDF)
+- Orchestration — маршрутизация, статусы, шаги процесса, policy принятия решений
+- AI extraction — извлечение сущностей и структуры заказа
+- Clarification — минимальный цикл уточнений при нехватке критичных данных
+- CRM bridge — передача результата в CRM и бизнес-процессы
+- Calculators — расчёты стоимости, сметы, параметров проекта
+- Proposal/document generation — формирование КП и сопутствующих материалов
+- Process tracking — отслеживание статусов, SLA, timeline и progress dashboard
 
 ## Разрешённая зона изменений
 Без дополнительного подтверждения разрешено изменять только:
-- `src/packages/**`
-- `src/pdf/**`
-- `src/suppliers/**`
-- `src/ai/**`
-- `src/whatsapp/**`
-- `functions/api/**`
-- `migrations/**`
-- `scripts/**`
-- `tests/**`
+- `packages/mvp/src/**`
+- `packages/mvp/functions/**`
+- `packages/mvp/migrations/**`
+- `packages/mvp/scripts/**`
+- `packages/shared/src/**`
+- `packages/orchestrator/src/**`
+- `packages/orchestrator/functions/**`
+- `packages/orchestrator/migrations/**`
+- `packages/orchestrator/scripts/**`
 - `docs/**`
+- `scripts/build.mjs`
 
 Только после явного подтверждения можно изменять:
 - production deployment config
-- `wrangler.*` в части production-настроек
+- `wrangler.toml` в части production-настроек
 - billing / invoices / финконтур
 - live CRM integrations
 - destructive migrations
 - старые production bridge-модули
-- секреты, `.env*`, access tokens, ключи API.[cite:13][cite:14]
+- секреты, `.env*`, access tokens, ключи API
 
 ## Неразрешённые действия
 Без явного запроса запрещено:
@@ -63,21 +116,7 @@
 - удалять таблицы, поля, бакеты или миграции с риском потери данных;
 - переписывать архитектуру целиком ради локального удобства;
 - вносить массовые рефакторы вне рамок поставленной задачи;
-- менять публичные контракты API без фиксации этого в docs и tests.[cite:13][cite:14]
-
-## Ожидаемая структура модулей
-Фактическая структура проекта:
-- `src/packages/` — пакеты услуг, кредитование, аналитика, шаблоны, статусы, deliverables.
-- `src/pdf/` — PDF intake, манифесты, черновики, размеры, КП из PDF.
-- `src/suppliers/` — каталог поставщиков, версионные прайс-листы, расчёт сметы.
-- `src/ai/` — AI package advisor, AI observability (ai_runs, ai_actions, ai_feedback).
-- `src/whatsapp/` — WhatsApp inbound, нормализация, переписки (после Phase 4.5).
-- `functions/api/` — API routes (Cloudflare Pages Functions).
-- `migrations/` — D1 SQL миграции (0001–0006).
-- `scripts/` — smoke-тесты (`package-lifecycle-smoke.mjs`, `supplier-smoke.mjs`, `package-advisor-smoke.mjs`, `ai-observability-smoke.mjs`).
-- `public/` — статические файлы и admin UI.
-
-Границы доменов не размывать без причины. При расширении системы — следовать реальной структуре.
+- менять публичные контракты API без фиксации этого в docs и tests.
 
 ## Рабочий режим AI-кодера
 Для каждой задачи соблюдать порядок:
@@ -88,7 +127,7 @@
 5. Запустить проверки.
 6. Кратко зафиксировать результат и риски.
 
-Один сеанс — одна логическая задача, если явно не указано иное.[cite:25]
+Один сеанс — одна логическая задача, если явно не указано иное.
 
 ## Правила внесения изменений
 - Делать минимальные, прицельные изменения.
@@ -108,7 +147,7 @@
 - Не задавать вопросы по данным, которые можно надёжно вывести из текста, аудио, эскиза или плана.
 - Задавать вопросы только по блокирующим данным, без которых нельзя безопасно продолжать маршрут процесса.
 - Формулировать вопросы коротко и предметно.
-- Приоритет — минимальная вовлечённость клиента при сохранении точности результата.[cite:10][cite:16]
+- Приоритет — минимальная вовлечённость клиента при сохранении точности результата.
 
 ## Правила тестирования
 Тесты обязательны при изменении:
@@ -119,7 +158,7 @@
 - status transitions;
 - process tracking;
 - API contracts;
-- D1 schema access logic.[cite:2][web:29]
+- D1 schema access logic.
 
 Минимальный набор после изменений:
 - lint
@@ -133,22 +172,26 @@
 Фактические команды репозитория:
 
 Установка:
-- `npm install`
+- `npm install` (устанавливает все workspaces)
 
 Разработка:
-- `npm run dev` (wrangler pages dev)
+- `npm run build` (assembles .wrangler/dist/ из packages/)
+- `npm run dev` (build + wrangler pages dev)
 
 Проверка синтаксиса всех модулей:
-- `npm run check` (node --check по всем src/ и functions/)
+- `npm run check` ( delegates to @furniture/mvp check)
 
 Smoke-тесты:
 - `npm run smoke:packages` — lifecycle пакетов (318 assertions)
 - `npm run smoke:suppliers` — поставщики и прайс-листы (79 assertions)
-- `npm run smoke:advisor` — AI package advisor (35 assertions)
+- `npm run smoke:advisor` — AI package advisor (47 assertions)
 - `npm run smoke:ai` — AI observability (58 assertions)
+- `npm run smoke:whatsapp` — WhatsApp inbound (56 assertions)
+- `npm run smoke:project` — project files + share links (61 assertions)
+- `npm run smoke:orchestrator` — intake routing, process tracking, extraction, clarification (44 assertions)
 
 Деплой:
-- `npm run deploy` (wrangler pages deploy)
+- `npm run deploy` (build + wrangler pages deploy)
 
 Деплой миграций:
 - `npm run db:migrate:local` — локальные миграции D1
@@ -162,14 +205,14 @@ Smoke-тесты:
 - typecheck проходит;
 - релевантные тесты проходят;
 - обновлены docs или session notes, если изменилось поведение системы;
-- кратко зафиксированы ограничения, риски или следующий шаг.[cite:33][cite:36]
+- кратко зафиксированы ограничения, риски или следующий шаг.
 
 ## Документация и память проекта
 Постоянный контекст проекта должен храниться в предсказуемых местах:
 - `HARNESS.md` — постоянные правила и рамки проекта;
 - `SESSION_NOTES.md` — накопленный рабочий контекст и свежие выводы;
 - `docs/decisions/` — архитектурные решения;
-- `docs/runbooks/` — операционные сценарии и внутренние инструкции.[cite:25][cite:40][cite:41]
+- `docs/runbooks/` — операционные сценарии и внутренние инструкции.
 
 Если в ходе задачи выявлено новое устойчивое правило проекта, его нужно поднимать из session-level заметок в постоянную документацию.
 
@@ -177,10 +220,10 @@ Smoke-тесты:
 - Никогда не выводить секреты в код, логи, фикстуры или документацию.
 - Не выдумывать значения env-переменных.
 - Не запускать destructive operations без явного подтверждения.
-- Для тестов предпочитать mocks, fakes и локальные фикстуры, а не живые production-интеграции.[cite:34][cite:36]
+- Для тестов предпочитать mocks, fakes и локальные фикстуры, а не живые production-интеграции.
 
 ## Работа с Cloudflare-контуром
-У проекта уже есть практический Cloudflare-контур и production-oriented инфраструктурное мышление, поэтому любые изменения в Workers, D1, R2 и публичных маршрутах должны быть осторожными, обратимыми и тестируемыми.[cite:11][cite:13][cite:14]
+У проекта уже есть практический Cloudflare-контур и production-oriented инфраструктурное мышление, поэтому любые изменения в Workers, D1, R2 и публичных маршрутах должны быть осторожными, обратимыми и тестируемыми.
 
 Предпочтения:
 - сначала локальная/preview проверка;
@@ -202,4 +245,4 @@ Smoke-тесты:
 - Не додумывать бизнес-правила, если они не подтверждены кодом, документацией или задачей.
 - При конфликте между «красивой архитектурой» и реальным workflow мебельной студии выбирать workflow.
 - При неясности сначала локализовать неопределённость, а не переписывать систему целиком.
-- Изменения должны помогать практической автоматизации заказов, а не только улучшать абстрактную инженерную чистоту.[cite:10][cite:14][cite:16]
+- Изменения должны помогать практической автоматизации заказов, а не только улучшать абстрактную инженерную чистоту.

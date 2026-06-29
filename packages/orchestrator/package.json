@@ -1,0 +1,13 @@
+{
+  "name": "@furniture/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/intake/intake-router.js && node --check src/orchestration/process-tracker.js && node --check src/extraction/extractor.js && node --check src/clarification/clarifier.js",
+    "smoke": "node --experimental-sqlite scripts/orchestrator-smoke.mjs"
+  },
+  "dependencies": {
+    "@furniture/shared": "workspace:*"
+  }
+}

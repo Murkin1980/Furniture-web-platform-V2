@@ -1,22 +1,26 @@
 {
   "name": "furniture-platform-v2",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "check": "node --check src/auth.js && node --check src/packages/package-catalog.js && node --check src/packages/package-store.js && node --check src/packages/credit-on-order.js && node --check src/packages/message-templates.js && node --check src/packages/package-analytics.js && node --check src/packages/payment-store.js && node --check src/packages/visual-standards.js && node --check src/packages/deliverable-store.js && node --check src/pdf/pdf-manifest.js && node --check src/pdf/pdf-store.js && node --check src/suppliers/supplier-catalog.js && node --check src/suppliers/supplier-store.js && node --check src/ai/package-advisor.js && node --check src/ai/ai-observability.js && node --check src/whatsapp/normalize-message.js && node --check src/whatsapp/conversation-store.js && node --check src/projects/project-store.js && node --check functions/api/packages.js && node --check functions/api/message-templates.js && node --check functions/api/analytics.js && node --check functions/api/payments.js && node --check functions/api/payments/[pid].js && node --check functions/api/deliverable-specs.js && node --check functions/api/deliverables/[did].js && node --check functions/api/orders/[id]/engagements.js && node --check functions/api/orders/[id]/engagements/[eid].js && node --check functions/api/orders/[id]/engagements/[eid]/deliverables.js && node --check functions/api/orders/[id]/pdf/uploads.js && node --check functions/api/orders/[id]/pdf/drafts.js && node --check functions/api/suppliers.js && node --check functions/api/suppliers/[sid]/price-lists.js && node --check functions/api/whatsapp/webhook.js",
-    "test": "node --test",
-    "dev": "wrangler pages dev public --binding RUNTIME_SCHEMA_INIT=true --binding ADMIN_TOKEN=dev-admin-token --compatibility-date=2026-06-28 --persist-to=.wrangler/state",
-    "deploy": "wrangler pages deploy public --project-name=furniture-platform-v2",
+    "build": "node scripts/build.mjs",
+    "check": "npm run check -w @furniture/mvp",
+    "dev": "npm run build && wrangler pages dev .wrangler/dist/public --binding RUNTIME_SCHEMA_INIT=true --binding ADMIN_TOKEN=dev-admin-token --compatibility-date=2026-06-28 --persist-to=.wrangler/state",
+    "deploy": "npm run build && wrangler pages deploy .wrangler/dist/public --project-name=furniture-platform-v2",
     "db:create": "wrangler d1 create furniture-platform-v2",
     "db:migrate:local": "wrangler d1 migrations apply furniture-platform-v2 --local",
     "db:migrate:remote": "wrangler d1 migrations apply furniture-platform-v2 --remote",
-    "smoke:packages": "node scripts/package-lifecycle-smoke.mjs",
-    "smoke:suppliers": "node scripts/supplier-smoke.mjs",
-    "smoke:advisor": "node scripts/package-advisor-smoke.mjs",
-    "smoke:ai": "node --experimental-sqlite scripts/ai-observability-smoke.mjs",
-    "smoke:whatsapp": "node --experimental-sqlite scripts/whatsapp-smoke.mjs",
-    "smoke:project": "node --experimental-sqlite scripts/project-store-smoke.mjs"
+    "smoke:packages": "npm run smoke:packages -w @furniture/mvp",
+    "smoke:suppliers": "npm run smoke:suppliers -w @furniture/mvp",
+    "smoke:advisor": "npm run smoke:advisor -w @furniture/mvp",
+    "smoke:ai": "npm run smoke:ai -w @furniture/mvp",
+    "smoke:whatsapp": "npm run smoke:whatsapp -w @furniture/mvp",
+    "smoke:project": "npm run smoke:project -w @furniture/mvp",
+    "smoke:orchestrator": "npm run smoke -w @furniture/orchestrator"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
