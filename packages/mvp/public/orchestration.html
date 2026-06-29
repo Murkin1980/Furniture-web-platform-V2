@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orchestration Console — Platform V2</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f6f9; color: #333; }
+    .header { background: #1a237e; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 18px; font-weight: 500; }
+    .header .status { font-size: 13px; opacity: 0.8; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .metric-card .label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-card .value { font-size: 28px; font-weight: 600; margin-top: 4px; }
+    .metric-card .value.warn { color: #f57c00; }
+    .metric-card .value.danger { color: #d32f2f; }
+    .metric-card .value.ok { color: #388e3c; }
+
+    .filters { background: white; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .filters select, .filters input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    .filters button { padding: 6px 14px; background: #1a237e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .filters button:hover { background: #283593; }
+
+    .table-wrap { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f5f5f5; text-align: left; padding: 10px 12px; font-weight: 500; border-bottom: 2px solid #e0e0e0; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+    tr:hover { background: #f9f9f9; }
+    tr.blocked { background: #fff3e0; }
+    tr.failed { background: #fce4ec; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+    .badge.created { background: #e3f2fd; color: #1565c0; }
+    .badge.classifying { background: #e8eaf6; color: #283593; }
+    .badge.extracting { background: #f3e5f5; color: #7b1fa2; }
+    .badge.clarifying { background: #fff3e0; color: #e65100; }
+    .badge.routing { background: #e0f2f1; color: #00695c; }
+    .badge.completed { background: #e8f5e9; color: #2e7d32; }
+    .badge.failed { background: #fce4ec; color: #c62828; }
+    .badge.timed_out { background: #fce4ec; color: #c62828; }
+
+    .detail-panel { background: white; border-radius: 8px; padding: 20px; margin-top: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
+    .detail-panel.active { display: block; }
+    .detail-panel h3 { margin-bottom: 12px; font-size: 16px; }
+    .detail-section { margin-bottom: 16px; }
+    .detail-section h4 { font-size: 13px; color: #666; margin-bottom: 8px; text-transform: uppercase; }
+    .step-list { list-style: none; }
+    .step-list li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    .step-list li:last-child { border-bottom: none; }
+    .step-time { color: #999; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Orchestration Console</h1>
+    <div class="status" id="status">Loading...</div>
+  </div>
+
+  <div class="container">
+    <div class="metrics" id="metrics">
+      <div class="metric-card"><div class="label">Total Processes</div><div class="value" id="m-total">-</div></div>
+      <div class="metric-card"><div class="label">Clarifying</div><div class="value warn" id="m-clarifying">-</div></div>
+      <div class="metric-card"><div class="label">Timed Out</div><div class="value danger" id="m-timedout">-</div></div>
+      <div class="metric-card"><div class="label">Completed</div><div class="value ok" id="m-completed">-</div></div>
+      <div class="metric-card"><div class="label">Failed</div><div class="value danger" id="m-failed">-</div></div>
+      <div class="metric-card"><div class="label">Avg Clarifications</div><div class="value" id="m-avg-clar">-</div></div>
+    </div>
+
+    <div class="filters">
+      <select id="f-status">
+        <option value="">All statuses</option>
+        <option value="created">Created</option>
+        <option value="classifying">Classifying</option>
+        <option value="extracting">Extracting</option>
+        <option value="clarifying">Clarifying</option>
+        <option value="routing">Routing</option>
+        <option value="completed">Completed</option>
+        <option value="failed">Failed</option>
+        <option value="timed_out">Timed Out</option>
+      </select>
+      <select id="f-modality">
+        <option value="">All modalities</option>
+        <option value="text">Text</option>
+        <option value="image">Image</option>
+        <option value="audio">Audio</option>
+        <option value="pdf">PDF</option>
+        <option value="mixed">Mixed</option>
+      </select>
+      <button onclick="loadProcesses()">Filter</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Modality</th>
+            <th>Order</th>
+            <th>Clarifications</th>
+            <th>Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="processes-body">
+          <tr><td colspan="7" style="text-align:center;color:#999;">No data</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="detail-panel" id="detail-panel">
+      <h3>Process <span id="detail-id"></span></h3>
+      <div class="detail-section">
+        <h4>Steps</h4>
+        <ul class="step-list" id="detail-steps"></ul>
+      </div>
+      <div class="detail-section">
+        <h4>Extractions</h4>
+        <ul class="step-list" id="detail-extractions"></ul>
+      </div>
+      <div class="detail-section">
+        <h4>Clarifications</h4>
+        <ul class="step-list" id="detail-clarifications"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api/orchestration/process';
+
+    async function loadMetrics() {
+      try {
+        const res = await fetch(`${API}?limit=200`);
+        const data = await res.json();
+        const items = data.items || [];
+
+        const total = items.length;
+        const clarifying = items.filter(i => i.status === 'clarifying').length;
+        const timedOut = items.filter(i => i.status === 'timed_out').length;
+        const completed = items.filter(i => i.status === 'completed').length;
+        const failed = items.filter(i => i.status === 'failed').length;
+
+        document.getElementById('m-total').textContent = total;
+        document.getElementById('m-clarifying').textContent = clarifying;
+        document.getElementById('m-timedout').textContent = timedOut;
+        document.getElementById('m-completed').textContent = completed;
+        document.getElementById('m-failed').textContent = failed;
+        document.getElementById('m-avg-clar').textContent = '-';
+        document.getElementById('status').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+      } catch (e) {
+        document.getElementById('status').textContent = 'Error loading metrics';
+      }
+    }
+
+    async function loadProcesses() {
+      const status = document.getElementById('f-status').value;
+      const modality = document.getElementById('f-modality').value;
+
+      let url = `${API}?limit=100`;
+      if (status) url += `&status=${status}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const items = (data.items || []).filter(i => !modality || i.inputModality === modality);
+
+        const tbody = document.getElementById('processes-body');
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">No processes found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = items.map(p => `
+          <tr class="${p.status === 'clarifying' ? 'blocked' : ''} ${p.status === 'failed' ? 'failed' : ''}">
+            <td>${p.id}</td>
+            <td><span class="badge ${p.status}">${p.status}</span></td>
+            <td>${p.inputModality || '-'}</td>
+            <td>${p.orderId || '-'}</td>
+            <td>${p.clarificationCount || 0}</td>
+            <td>${p.createdAt ? new Date(p.createdAt).toLocaleString() : '-'}</td>
+            <td><button onclick="showDetail(${p.id})" style="padding:2px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;background:white;">View</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        document.getElementById('processes-body').innerHTML =
+          '<tr><td colspan="7" style="text-align:center;color:#d32f2f;">Error loading processes</td></tr>';
+      }
+    }
+
+    async function showDetail(pid) {
+      try {
+        const res = await fetch(`${API}/${pid}`);
+        const data = await res.json();
+        const p = data.item;
+
+        document.getElementById('detail-id').textContent = `#${pid}`;
+        document.getElementById('detail-steps').innerHTML = (p.steps || []).map(s =>
+          `<li><span class="badge ${s.status}">${s.step_type}</span> <span class="step-time">${s.created_at || ''}</span></li>`
+        ).join('') || '<li>No steps</li>';
+
+        document.getElementById('detail-extractions').innerHTML = (p.extractions || []).map(e =>
+          `<li><span class="badge ${e.status}">${e.extraction_type}</span> <span class="step-time">${e.created_at || ''}</span></li>`
+        ).join('') || '<li>No extractions</li>';
+
+        document.getElementById('detail-clarifications').innerHTML = (p.clarifications || []).map(c =>
+          `<li><span class="badge ${c.status}">${c.priority}</span> ${c.question} ${c.response ? '→ ' + c.response : ''} <span class="step-time">${c.created_at || ''}</span></li>`
+        ).join('') || '<li>No clarifications</li>';
+
+        document.getElementById('detail-panel').classList.add('active');
+      } catch (e) {
+        alert('Error loading process detail');
+      }
+    }
+
+    loadMetrics();
+    loadProcesses();
+    setInterval(loadMetrics, 30000);
+  </script>
+</body>
+</html>

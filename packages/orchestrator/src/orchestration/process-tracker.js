@@ -5,12 +5,14 @@
  * created → classifying → extracting → clarifying → routing → completed | failed
  *
  * The tracker provides:
- * - Process creation with initial context
+ * - Process creation with initial context and idempotency
  * - State transitions with validation
- * - Step logging for audit trail
+ * - Step logging for audit trail (deduplicated)
  * - Timeout detection
  * - SLA monitoring
  */
+
+import { deriveProcessKey, deriveStepKey, checkIdempotent, storeIdempotent } from "../idempotency.js";
 
 export const PROCESS_STATUS = Object.freeze({
   CREATED: "created",
@@ -39,21 +41,33 @@ export function isValidTransition(from, to) {
   return allowed ? allowed.includes(to) : false;
 }
 
-export async function createProcess({ db, orderId, clientId, inputModality, inputSummary, context }) {
+export async function createProcess({ db, orderId, clientId, inputModality, inputSummary, context, idempotencyKey }) {
+  const key = idempotencyKey || deriveProcessKey(clientId, inputModality, inputSummary);
+
+  const existing = await checkIdempotent({ db, key, entityType: "process" });
+  if (existing) {
+    return { ...existing, deduplicated: true };
+  }
+
   const result = await db.prepare(
-    `INSERT INTO orchestration_processes (order_id, client_id, input_modality, input_summary_json, context_json, status)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO orchestration_processes (order_id, client_id, input_modality, input_summary_json, context_json, status, idempotency_key)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     orderId || null,
     clientId || null,
     inputModality || "unknown",
     JSON.stringify(inputSummary || {}),
     JSON.stringify(context || {}),
-    PROCESS_STATUS.CREATED
+    PROCESS_STATUS.CREATED,
+    key
   ).run();
 
   const id = result.meta?.last_row_id;
-  return { id, status: PROCESS_STATUS.CREATED };
+  const processResult = { id, status: PROCESS_STATUS.CREATED };
+
+  await storeIdempotent({ db, key, entityType: "process", result: processResult });
+
+  return processResult;
 }
 
 export async function transitionProcess({ db, processId, toStatus, metadata }) {
@@ -79,16 +93,21 @@ export async function transitionProcess({ db, processId, toStatus, metadata }) {
   ).bind(toStatus, id).run();
 
   if (metadata) {
-    await db.prepare(
-      `INSERT INTO orchestration_steps (process_id, step_type, status, input_json, output_json)
-       VALUES (?, ?, ?, ?, ?)`
-    ).bind(
-      id,
-      toStatus,
-      "completed",
-      JSON.stringify(metadata.input || {}),
-      JSON.stringify(metadata.output || {})
-    ).run();
+    const stepKey = deriveStepKey(id, toStatus);
+    const existingStep = await checkIdempotent({ db, key: stepKey, entityType: "step" });
+    if (!existingStep) {
+      await db.prepare(
+        `INSERT INTO orchestration_steps (process_id, step_type, status, input_json, output_json)
+         VALUES (?, ?, ?, ?, ?)`
+      ).bind(
+        id,
+        toStatus,
+        "completed",
+        JSON.stringify(metadata.input || {}),
+        JSON.stringify(metadata.output || {})
+      ).run();
+      await storeIdempotent({ db, key: stepKey, entityType: "step", result: { logged: true } });
+    }
   }
 
   return { id, status: toStatus };

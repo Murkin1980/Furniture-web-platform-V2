@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS orchestration_processes (
   input_summary_json TEXT DEFAULT '{}',
   context_json TEXT DEFAULT '{}',
   status TEXT NOT NULL DEFAULT 'created',
+  clarification_count INTEGER DEFAULT 0,
+  blocking_question_count INTEGER DEFAULT 0,
+  nice_to_have_question_count INTEGER DEFAULT 0,
+  last_clarification_at TEXT,
   created_at TEXT DEFAULT (CURRENT_TIMESTAMP),
   updated_at TEXT DEFAULT (CURRENT_TIMESTAMP)
 );
