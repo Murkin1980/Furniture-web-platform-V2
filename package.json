@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/mvp"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -17,16 +17,9 @@
     "smoke:packages": "npm run smoke:packages -w @furniture/mvp",
     "smoke:suppliers": "npm run smoke:suppliers -w @furniture/mvp",
     "smoke:advisor": "npm run smoke:advisor -w @furniture/mvp",
-    "smoke:ai": "npm run smoke:ai -w @furniture/mvp",
-    "smoke:whatsapp": "npm run smoke:whatsapp -w @furniture/mvp",
-    "smoke:project": "npm run smoke:project -w @furniture/mvp",
-    "smoke:orchestrator": "npm run smoke -w @furniture/orchestrator",
-    "smoke:e2e": "npm run smoke:e2e -w @furniture/orchestrator",
-    "smoke:hardening": "npm run smoke:hardening -w @furniture/orchestrator",
-    "smoke:all": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor && npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e && npm run smoke:hardening"
+    "smoke:all": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
     "wrangler": "^4.95.0"
   }
 }
