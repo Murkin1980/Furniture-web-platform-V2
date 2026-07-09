@@ -2,7 +2,7 @@ import { PACKAGE_CODES } from "../packages/package-catalog.js";
 
 const INTENT_RULES = [
   {
-    packageCode: "package_c_candidate",
+    packageCode: PACKAGE_CODES.PACKAGE_C,
     keywords: [
       "sketchup", "skp", "3d файл", "3d-файл",
       "obj", "glb", "fbx", "stl",
@@ -47,14 +47,6 @@ function normalizeText(text) {
     .replace(/[^a-zа-я0-9\s_]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function scoreIntent(normalizedText, rule) {
-  let hits = 0;
-  for (const kw of rule.keywords) {
-    if (normalizedText.includes(kw)) hits++;
-  }
-  return hits * rule.weight;
 }
 
 export function classifyIntent(userMessage) {
@@ -146,21 +138,12 @@ export function suggestClarifyingQuestions(intent, context) {
     }
   }
 
-  if (intent.packageCode === "package_c_candidate") {
-    if (!context?.has3dFiles) {
-      questions.push({
-        field: "format",
-        question: "В каком формате у вас 3D-модель? SKP, OBJ, GLB, FBX?",
-        required: true
-      });
-    }
-    if (!context?.targetUser) {
-      questions.push({
-        field: "target_user",
-        question: "Для кого подготовить файлы: для дизайнера интерьера, для себя, для подрядчика?",
-        required: false
-      });
-    }
+  if (intent.packageCode === PACKAGE_CODES.PACKAGE_C) {
+    questions.push({
+      field: "readiness",
+      question: "Package C пока в статусе draft: GLB viewer и production boundary ещё не завершены. Перевести запрос в Package B или оставить как future handoff?",
+      required: true
+    });
   }
 
   return questions;
@@ -170,7 +153,8 @@ export function getAdvisorSummary(intent) {
   const labels = {
     [PACKAGE_CODES.LEVEL_1]: "Level 1 — Быстрый ориентир (0 тг)",
     [PACKAGE_CODES.PACKAGE_A]: "Package A — КП + смета (10 000 тг)",
-    [PACKAGE_CODES.PACKAGE_B]: "Package B — Визуал + размеры (20 000 тг)"
+    [PACKAGE_CODES.PACKAGE_B]: "Package B — Визуал + размеры (20 000 тг)",
+    [PACKAGE_CODES.PACKAGE_C]: "Package C — Designer / 3D Handoff (draft, not sellable)"
   };
 
   return {
