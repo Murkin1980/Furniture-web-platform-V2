@@ -1,28 +1,25 @@
 # Furniture web platform V2
 
-Вторая версия платформы мебели — коммерческий конструктор глубины услуги:
-от быстрого ответа «цена за метр» до оплачиваемого КП, визуала, проектной
-детализации и подготовки к производству.
+Вторая версия платформы мебели — коммерческий конструктор глубины услуги: от быстрого ответа «цена за метр» до оплачиваемого КП, визуала, проектной детализации и подготовки к производству.
 
 ## Контекст
 
-V1 (`furniture-orders-mvp`) — Cloudflare Pages Functions + D1 + R2, vanilla ESM,
-без build-шага. Доведены до production: lead intake, калькуляторы, landing workflow,
-native CRM, manual AI analysis, коммерческие предложения, безопасный контур для
-OCR, SketchUp MCP и render artifact pipeline.
+V1 (`furniture-orders-mvp`) — Cloudflare Pages Functions + D1 + R2, vanilla ESM, без build-шага. Доведены до production: lead intake, калькуляторы, landing workflow, native CRM, manual AI analysis, коммерческие предложения, безопасный контур для OCR, SketchUp MCP и render artifact pipeline.
 
-V2 строится не вокруг базовой автоматизации, а вокруг управляемой коммерциализации
-проектной глубины. См. `v2-roadmap.md`.
+V2 строится не вокруг базовой автоматизации, а вокруг управляемой коммерциализации проектной глубины. См. `v2-roadmap.md`.
 
-## Продуктовая линейка V2
+## Product line
 
-| Уровень | Цена | Состав |
-|---|---|---|
-| Level 1 | бесплатно | Ориентир по цене (погонный метр), без сметы и визуала |
-| Package A | 10 000 тг | КП, смета по позициям, предварительный BW визуал |
-| Package B | 20 000 тг | Цветной визуал в нескольких проекциях, КП, подробные размеры, 2–3 варианта компоновки, один раунд корректировок, лист «входит/не входит» |
+| Уровень | Цена | Состав | Готовность |
+|---|---:|---|---|
+| Level 1 | бесплатно | Ориентир по цене, без сметы и визуала | active |
+| Package A | 10 000 тг | КП, смета по позициям, предварительный BW визуал | active |
+| Package B | 20 000 тг | Цветной визуал, КП, подробные размеры, 2–3 варианта компоновки, один раунд корректировок | active |
+| Package C | configurable | Designer / 3D Handoff | draft, not sellable |
 
 Стоимость платного пакета зачитывается в стоимость заказа (credit-on-order).
+
+Package C остаётся в каталоге как draft. `viewer_link` относится к planned deliverables до завершения GLB viewer и отдельного production boundary decision.
 
 ## Фазы V2
 
@@ -34,10 +31,17 @@ V2 строится не вокруг базовой автоматизации,
 
 Чек-лист фаз: `STAGE_CHECKLIST.md`.
 
+## Deployment and auth boundary
+
+Перед production деплоем V2 использовать:
+
+- `docs/DEPLOYMENT_BOUNDARY.md` — граница Pages / D1 / orchestrator runtime.
+- `docs/AUTH_AUDIT.md` — audit старого inline auth паттерна и правила scoped auth.
+
 ## Стек
 
 - Cloudflare Pages Functions + D1 (SQLite) + R2
-- Vanilla ESM, без build-шага
+- Vanilla ESM
 - Pure core + injected sender, все «опасные» фичи gated/manual по умолчанию
 - Golos Text, AdminLTE-inspired admin shell (без runtime-зависимости Bootstrap/AdminLTE)
 
@@ -46,14 +50,10 @@ V2 строится не вокруг базовой автоматизации,
 - `v2-roadmap.md` — полный roadmap V2
 - `STAGE_CHECKLIST.md` — чек-лист фаз
 - `PROJECT_PROGRESS.md` / `PROJECT_PROGRESS.html` — текущий прогресс
+- `docs/DEPLOYMENT_BOUNDARY.md` — production boundary
+- `docs/AUTH_AUDIT.md` — auth audit
 - `AGENTS.md` (workspace) — ритуалы рабочего процесса
 
 ## Статус
 
-Фаза 4 — Supplier-aware pricing: **завершена и задеплоена** ✅ (80% общего прогресса, 4/5 фаз)
-Production: https://furniture-platform-v2.pages.dev · Admin: `/admin` · Прогресс: `/progress`
-API: packages, engagements, payments, templates, analytics, deliverables, deliverable-specs, pdf uploads/drafts, suppliers, price-lists (все 200).
-Smoke 318/318, миграции 0001–0005 (local + remote D1).
-Supplier pricing: versioned catalog, price lists (draft→published→archived), supplier-aware estimates с material tiers.
-Следующий шаг: Фаза 5 — Controlled 3D upgrade.
-Подробнее: `PROJECT_PROGRESS.md`.
+Фаза 4 — Supplier-aware pricing: завершена и задеплоена. Следующий hardening шаг перед production expansion: deployment boundary, auth audit, Package C readiness guard.
