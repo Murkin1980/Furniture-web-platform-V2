@@ -3,6 +3,7 @@ import {
   VISUAL_STATE,
   UPGRADE_OFFER_STATE,
   buildEngagementDefaults,
+  getPackageDefinition,
   isValidEngagementStatus,
   isValidPackageCode,
   isValidSourceMaterialType,
@@ -71,6 +72,17 @@ export async function createEngagement({ db, orderId, packageCode, sourceMateria
   if (!isValidPackageCode(packageCode)) {
     return errorResult(400, "invalid_package_code", "packageCode must be a known package code.");
   }
+
+  const packageDefinition = getPackageDefinition(packageCode);
+  if (!packageDefinition) return errorResult(400, "invalid_package_code", "Package definition is missing.");
+  if (packageDefinition.isSellable === false) {
+    return errorResult(
+      409,
+      "package_not_sellable",
+      packageDefinition.readinessNote || "This package is not sellable in the current production boundary."
+    );
+  }
+
   const material = isValidSourceMaterialType(sourceMaterialType) ? sourceMaterialType : "manual";
 
   const order = await db.prepare("SELECT id, engagement_level AS engagementLevel FROM orders WHERE id = ?").bind(id).first();
