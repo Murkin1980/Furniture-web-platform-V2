@@ -1,3 +1,10 @@
+import {
+  positiveInteger,
+  okResult,
+  errorResult,
+  normalizePlainTextPreview
+} from "../shared/store-utils.js";
+
 export const CONVERSATION_STATUS = Object.freeze({
   ACTIVE: "active",
   ARCHIVED: "archived",
@@ -18,9 +25,7 @@ export const MESSAGE_STATUS = Object.freeze({
 });
 
 export async function findOrCreateConversation({ db, phoneNumber }) {
-  if (!phoneNumber) {
-    return errorResult(400, "missing_phone", "phoneNumber is required.");
-  }
+  if (!phoneNumber) return errorResult(400, "missing_phone", "phoneNumber is required.");
 
   const existing = await db.prepare(
     `SELECT id, phone_number AS phoneNumber, client_id AS clientId, order_id AS orderId,
@@ -32,13 +37,10 @@ export async function findOrCreateConversation({ db, phoneNumber }) {
      ORDER BY created_at DESC LIMIT 1`
   ).bind(phoneNumber).first();
 
-  if (existing) {
-    return okResult({ item: existing, created: false });
-  }
+  if (existing) return okResult({ item: existing, created: false });
 
   const result = await db.prepare(
-    `INSERT INTO whatsapp_conversations (phone_number, status)
-     VALUES (?, ?)`
+    `INSERT INTO whatsapp_conversations (phone_number, status) VALUES (?, ?)`
   ).bind(phoneNumber, CONVERSATION_STATUS.ACTIVE).run();
 
   const id = result.meta?.last_row_id;
@@ -122,12 +124,16 @@ export async function addInboundMessage({ db, conversationId, body, messageType,
   ).run();
 
   const id = result.meta?.last_row_id;
+  const preview = normalizePlainTextPreview(body, 200);
 
   await db.prepare(
     `UPDATE whatsapp_conversations
-     SET last_message_at = CURRENT_TIMESTAMP, last_message_preview = ?, unread_count = unread_count + 1, updated_at = CURRENT_TIMESTAMP
+     SET last_message_at = CURRENT_TIMESTAMP,
+         last_message_preview = ?,
+         unread_count = unread_count + 1,
+         updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`
-  ).bind((body || "").substring(0, 200), cid).run();
+  ).bind(preview, cid).run();
 
   return okResult({ item: { id, conversationId: cid, direction: MESSAGE_DIRECTION.INBOUND, status: MESSAGE_STATUS.RECEIVED } }, 201);
 }
@@ -200,10 +206,13 @@ export async function markRead({ db, conversationId }) {
 }
 
 export async function listConversations({ db, status, limit = 50, offset = 0 }) {
-  let where = [];
-  let params = [];
+  const where = [];
+  const params = [];
 
-  if (status) { where.push("status = ?"); params.push(status); }
+  if (status) {
+    where.push("status = ?");
+    params.push(status);
+  }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
   const safeLimit = Math.min(Math.max(1, Number(limit) || 50), 200);
@@ -226,10 +235,13 @@ export async function listMessages({ db, conversationId, direction, limit = 100,
   const cid = positiveInteger(conversationId);
   if (!cid) return errorResult(400, "invalid_conversation_id", "conversationId must be a positive integer.");
 
-  let where = ["conversation_id = ?"];
-  let params = [cid];
+  const where = ["conversation_id = ?"];
+  const params = [cid];
 
-  if (direction) { where.push("direction = ?"); params.push(direction); }
+  if (direction) {
+    where.push("direction = ?");
+    params.push(direction);
+  }
 
   const whereClause = `WHERE ${where.join(" AND ")}`;
   const safeLimit = Math.min(Math.max(1, Number(limit) || 100), 500);
@@ -246,17 +258,4 @@ export async function listMessages({ db, conversationId, direction, limit = 100,
   ).bind(...params, safeLimit, safeOffset).all();
 
   return okResult({ items: result?.results || [] });
-}
-
-function positiveInteger(value) {
-  const number = Number(value);
-  return Number.isInteger(number) && number > 0 ? number : null;
-}
-
-function okResult(body, status = 200) {
-  return { ok: true, status, body: { success: true, ...body } };
-}
-
-function errorResult(status, error, message) {
-  return { ok: false, status, body: { success: false, error, message } };
 }
