@@ -137,11 +137,19 @@ export async function transitionEngagement({ db, engagementId, toStatus, visualS
       `Engagement cannot transition from "${current.status}" to "${toStatus}".`);
   }
 
+  if (toStatus === ENGAGEMENT_STATUS.DELIVERED) {
+    const deliverableGate = await checkDeliverableHandoffGate(db, id);
+    if (!deliverableGate.ok) return deliverableGate;
+  }
+
   const updates = [`status = ?`, `updated_at = CURRENT_TIMESTAMP`];
   const values = [toStatus];
   const timestampColumn = statusTimestampColumn(toStatus);
   if (timestampColumn) {
     updates.push(`${timestampColumn} = CURRENT_TIMESTAMP`);
+  }
+  if (toStatus === ENGAGEMENT_STATUS.CREDITED) {
+    updates.push(`credited_amount_kzt = CASE WHEN credited_on_order = 1 THEN price_kzt ELSE 0 END`);
   }
   if (isValidVisualState(visualState) && visualState !== current.visualState) {
     updates.push(`visual_state = ?`);
@@ -206,6 +214,24 @@ function statusTimestampColumn(status) {
     case ENGAGEMENT_STATUS.CREDITED: return "credited_at";
     default: return null;
   }
+}
+
+async function checkDeliverableHandoffGate(db, engagementId) {
+  const result = await db.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered
+     FROM package_deliverables
+     WHERE engagement_id = ?`
+  ).bind(engagementId).first();
+  const total = Number(result?.total) || 0;
+  const delivered = Number(result?.delivered) || 0;
+  if (total === 0) {
+    return errorResult(409, "deliverables_not_seeded", "Client handoff requires package deliverables to be seeded first.");
+  }
+  if (delivered !== total) {
+    return errorResult(409, "deliverables_not_approved", "Client handoff requires every deliverable to be reviewed and delivered by a manager.");
+  }
+  return okResult({ total, delivered });
 }
 
 async function findEngagement(db, id) {
