@@ -251,7 +251,7 @@ D1 has automatic backups on Cloudflare. For local dev, the SQLite file is dispos
 3. Input client request text → package advisor classifies
 4. Manager confirms classification
 5. Create Package A or B engagement
-6. Record payment (10,000 тг)
+6. Record payment (Package A — 10 000 тг, Package B — 20 000 тг)
 7. Create deliverables (BW preview, color views, dimensions)
 8. Build supplier-aware estimate
 9. Manager reviews and approves
