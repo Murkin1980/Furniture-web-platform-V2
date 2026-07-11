@@ -26,8 +26,10 @@
     "smoke:core": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor",
     "smoke:phase41:a": "npm run smoke:phase41:a -w @furniture/mvp",
     "smoke:phase42:b": "npm run smoke:phase42:b -w @furniture/mvp",
+    "smoke:phase43": "npm run smoke:phase43 -w @furniture/mvp",
+    "smoke:production": "npm run smoke:production -w @furniture/mvp",
     "smoke:deferred": "npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e && npm run smoke:hardening",
-    "smoke:all": "npm run smoke:core && npm run smoke:phase41:a && npm run smoke:phase42:b"
+    "smoke:all": "npm run smoke:core && npm run smoke:phase41:a && npm run smoke:phase42:b && npm run smoke:phase43"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

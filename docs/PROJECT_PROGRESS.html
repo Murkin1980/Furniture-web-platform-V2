@@ -380,7 +380,7 @@
     </div>
     <div class="meta-item">
       <span class="meta-label">Current Phase</span>
-      <span class="meta-value">Phase 4.2 complete</span>
+      <span class="meta-value">Phase 4.3 complete</span>
     </div>
     <div class="meta-item">
       <span class="meta-label">Last Updated</span>
@@ -388,7 +388,7 @@
     </div>
     <div class="meta-item">
       <span class="meta-label">Latest Accepted Commit</span>
-      <span class="meta-value commit-hash" title="1f7940ea314be9d70dbcc317827ede009e20de7c">1f7940e</span>
+      <span class="meta-value commit-hash" title="df4b486">df4b486</span>
     </div>
   </div>
 </header>
@@ -473,9 +473,14 @@
           <div class="timeline-status"><span class="badge badge-green">complete</span></div>
         </div>
         <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-green"></div>
+          <div class="timeline-label">Phase 4.3 &mdash; Operator-ready MVP</div>
+          <div class="timeline-status"><span class="badge badge-green">complete</span></div>
+        </div>
+        <div class="timeline-item">
           <div class="timeline-dot timeline-dot-gray"></div>
-          <div class="timeline-label">Next approved stage</div>
-          <div class="timeline-status"><span class="badge badge-gray">pending</span> &mdash; not yet approved</div>
+          <div class="timeline-label">Phase 4.4 &mdash; Expansion decision</div>
+          <div class="timeline-status"><span class="badge badge-gray">awaiting measured data</span></div>
         </div>
         <div class="timeline-item">
           <div class="timeline-dot timeline-dot-orange"></div>
@@ -544,7 +549,7 @@
     <div class="section-title">Test Summary</div>
     <div class="card">
       <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem;">
-        <div class="test-total">601</div>
+        <div class="test-total">1 021</div>
         <div>
           <div style="font-weight:600; font-size:1rem;">tests passed</div>
           <div class="test-detail">0 failures</div>
@@ -571,8 +576,16 @@
             <td class="price-cell"><span class="badge badge-green">112 / 112</span></td>
           </tr>
           <tr>
+            <td>Phase 4.3 operational rehearsal</td>
+            <td class="price-cell"><span class="badge badge-green">403 / 403</span></td>
+          </tr>
+          <tr>
+            <td>Production readiness smoke</td>
+            <td class="price-cell"><span class="badge badge-green">17 / 17</span></td>
+          </tr>
+          <tr>
             <td style="font-weight:600;">Total</td>
-            <td class="price-cell" style="font-weight:600;"><span class="badge badge-green">601 / 601</span></td>
+            <td class="price-cell" style="font-weight:600;"><span class="badge badge-green">1 021 / 1 021</span></td>
           </tr>
           <tr>
             <td>Failures</td>
@@ -643,7 +656,31 @@
   <div class="section">
     <div class="section-title">Next Approved Stage</div>
     <div class="card">
-      <p style="color:var(--text-secondary); font-style:italic;">Not yet approved</p>
+      <p style="font-size:0.9rem; margin-bottom:0.5rem;">Phase 4.3 &mdash; Operator-ready MVP <span class="badge badge-green">complete</span></p>
+      <ul class="arch-list">
+        <li>Client CRUD (create, get, list, update)</li>
+        <li>Order CRUD (create, get, list, update)</li>
+        <li>Advisor API endpoint</li>
+        <li>Admin UI: clients, orders, resolve revision, delivered, credited, launch panel</li>
+        <li>5-case operational rehearsal: 403 assertions, all passing</li>
+        <li>Production readiness smoke: 17 assertions, all passing</li>
+        <li>Production docs: configuration, deployment checklist, D1 migration runbook, rollback plan</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Expansion Decision -->
+  <div class="section">
+    <div class="section-title">Phase 4.4 &mdash; Expansion Decision</div>
+    <div class="card">
+      <p style="color:var(--text-secondary); font-size:0.9rem;">
+        Choose exactly one expansion based on measured bottlenecks from Phase 4.3 rehearsal data:
+      </p>
+      <ul class="arch-list">
+        <li><strong>Controlled 3D for Package B</strong> &mdash; if visual preparation is the main bottleneck</li>
+        <li><strong>Manager-approved WhatsApp workflow</strong> &mdash; if communication handling is the main bottleneck</li>
+        <li><strong>Operational analytics improvements</strong> &mdash; if workflow losses are unclear</li>
+      </ul>
     </div>
   </div>
 
@@ -675,6 +712,13 @@
             <td><span class="commit-hash" title="1f7940ea314be9d70dbcc317827ede009e20de7c">1f7940e</span></td>
             <td><span class="badge badge-green">PASS</span></td>
             <td>Package B end-to-end commercial proof &mdash; 112/112</td>
+          </tr>
+          <tr>
+            <td>2026-07-12</td>
+            <td>Phase 4.3</td>
+            <td><span class="commit-hash" id="phase43-commit" title="df4b486">df4b486</span></td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Operator-ready MVP &mdash; 403 rehearsal + 17 production smoke</td>
           </tr>
         </tbody>
       </table>

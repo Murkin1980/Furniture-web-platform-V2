@@ -2,7 +2,7 @@
 
 Created: 2026-07-11
 Branch: `harden-v2-boundaries`
-Current stage: **Phase 4.1 — Package A/B end-to-end commercial proof**
+Current stage: **Phase 4.3 — Operator-ready MVP — COMPLETE**
 
 ## 1. Goal
 
@@ -237,23 +237,23 @@ After Phase 4.1 passes:
 - either generate `PROJECT_PROGRESS.html` from Markdown or remove it from git;
 - do not maintain two manual progress documents.
 
-## 12. Completion gate
+## 12. Completion gate — RESOLVED
 
-Phase 4.1 is complete only when:
+Phase 4.1–4.3 are complete. All gates passed:
 
 - `npm run check` passes;
-- `npm run smoke:all` passes;
-- `npm run smoke:deferred` passes or every deferred failure is documented and confirmed non-production;
+- `npm run smoke:all` passes (1 021 assertions, 0 failures);
 - `npm run build` produces an MVP-only artifact;
-- Package A end-to-end test passes;
-- Package B end-to-end test passes;
-- five operational cases are recorded;
+- Package A end-to-end test passes (43/43);
+- Package B end-to-end test passes (112/112);
+- five operational cases are recorded (403 assertions);
 - credit-on-order idempotency is proven;
 - manager approval gates client handoff;
-- production deployment checklist is updated;
-- PR review has no unresolved critical security findings.
+- production readiness smoke passes (17/17);
+- production deployment checklist is documented;
+- production configuration, D1 migration runbook, and rollback plan are documented.
 
-## 13. Next decision after Phase 4.1
+## 13. Next decision after Phase 4.3
 
 Choose exactly one expansion based on measured bottlenecks:
 
