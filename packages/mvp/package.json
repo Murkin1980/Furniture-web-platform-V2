@@ -11,6 +11,7 @@
     "smoke:ai": "node --experimental-sqlite scripts/ai-observability-smoke.mjs",
     "smoke:whatsapp": "node --experimental-sqlite scripts/whatsapp-smoke.mjs && node scripts/whatsapp-security-smoke.mjs",
     "smoke:project": "node --experimental-sqlite scripts/project-store-smoke.mjs",
-    "smoke:phase41:a": "node --experimental-sqlite scripts/phase41-package-a-e2e-smoke.mjs"
+    "smoke:phase41:a": "node --experimental-sqlite scripts/phase41-package-a-e2e-smoke.mjs",
+    "smoke:phase42:b": "node --experimental-sqlite scripts/phase42-package-b-e2e-smoke.mjs"
   }
 }
