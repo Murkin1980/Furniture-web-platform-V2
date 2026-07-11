@@ -332,12 +332,9 @@ console.log("D1 store smoke (real SQLite via node:sqlite)");
   assert(progressResult.ok, "transition to in_progress with visual state succeeds");
   assertEqual(progressResult.body.item.visualState, VISUAL_STATE.BW_PREVIEW, "visual state is bw_preview");
 
-  const deliverResult = await transitionEngagement({ db, engagementId, toStatus: ENGAGEMENT_STATUS.DELIVERED });
-  assert(deliverResult.ok, "transition to delivered succeeds");
-
-  const creditResult = await transitionEngagement({ db, engagementId, toStatus: ENGAGEMENT_STATUS.CREDITED });
-  assert(creditResult.ok, "transition to credited succeeds");
-  assert(!!creditResult.body.item.creditedAt, "creditedAt is set");
+  const blockedDeliver = await transitionEngagement({ db, engagementId, toStatus: ENGAGEMENT_STATUS.DELIVERED });
+  assert(!blockedDeliver.ok, "in_progress -> delivered blocked without deliverables");
+  assertEqual(blockedDeliver.status, 409, "deliverables gate returns 409");
 
   const notFound = await getEngagement({ db, engagementId: 999999 });
   assert(!notFound.ok, "getEngagement 999999 returns not found");
