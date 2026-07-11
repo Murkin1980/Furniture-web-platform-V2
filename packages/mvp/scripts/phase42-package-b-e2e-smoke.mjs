@@ -176,11 +176,11 @@ try {
   assertOk(accepted, "manager accepts engagement");
   assertEqual(accepted.body.item.status, ENGAGEMENT_STATUS.ACCEPTED, "engagement is now accepted");
 
-  console.log("\n5. Payment flow — 60,000 KZT order total");
+  console.log("\n5. Payment flow — 20,000 KZT order total");
   const payment = await createPayment({
     db,
     engagementId,
-    amountKzt: 60000,
+    amountKzt: 20000,
     method: "kaspi",
     reference: "PHASE42-B-001"
   });
@@ -262,17 +262,29 @@ try {
   });
   assertOk(dsReady, "dimensions_sheet marked ready");
 
-  console.log("\n10. inclusions_sheet artifact");
+  console.log("\n10. inclusions_sheet artifact — proves inclusions AND exclusions");
   const incSheet = byType[DELIVERABLE_TYPES.INCLUSIONS_SHEET];
   assert(incSheet, "inclusions_sheet deliverable exists");
+  const inclusions = [
+    { id: "inc-1", category: "furniture", label: "Кухонный гарнитур" },
+    { id: "inc-2", category: "hardware", label: "Фурнитура Blum" }
+  ];
+  const exclusions = [
+    { id: "exc-1", category: "appliances", label: "Бытовая техника" },
+    { id: "exc-2", category: "plumbing", label: "Сантехника и подводка" }
+  ];
   const isArtifact = await attachArtifact({
     db,
     deliverableId: incSheet.id,
     artifactUrl: "https://example.test/package-b/inclusions-sheet.pdf",
     artifactFormat: "pdf",
-    metadata: { reviewedBy: "manager" }
+    metadata: { reviewedBy: "manager", inclusions, exclusions }
   });
   assertOk(isArtifact, "inclusions_sheet artifact attached");
+  assert(Array.isArray(isArtifact.body.item.metadata.inclusions), "metadata has inclusions array");
+  assert(isArtifact.body.item.metadata.inclusions.length >= 1, "inclusions has at least 1 item");
+  assert(Array.isArray(isArtifact.body.item.metadata.exclusions), "metadata has exclusions array");
+  assert(isArtifact.body.item.metadata.exclusions.length >= 1, "exclusions has at least 1 item");
 
   const isReady = await transitionDeliverableStatus({
     db, deliverableId: incSheet.id, toStatus: DELIVERABLE_STATUS.READY, createdBy: "manager"
