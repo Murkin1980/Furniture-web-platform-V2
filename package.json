@@ -24,7 +24,8 @@
     "smoke:e2e": "npm run smoke:e2e -w @furniture/orchestrator",
     "smoke:hardening": "npm run smoke:hardening -w @furniture/orchestrator",
     "smoke:core": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor",
-    "smoke:deferred": "npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e && npm run smoke:hardening",
+    "smoke:phase41:a": "npm run smoke:phase41:a -w @furniture/mvp",
+    "smoke:deferred": "npm run smoke:phase41:a && npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e && npm run smoke:hardening",
     "smoke:all": "npm run smoke:core"
   },
   "devDependencies": {
