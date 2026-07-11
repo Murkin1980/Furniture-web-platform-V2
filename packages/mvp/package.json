@@ -9,7 +9,7 @@
     "smoke:suppliers": "node scripts/supplier-smoke.mjs",
     "smoke:advisor": "node scripts/package-advisor-smoke.mjs",
     "smoke:ai": "node --experimental-sqlite scripts/ai-observability-smoke.mjs",
-    "smoke:whatsapp": "node --experimental-sqlite scripts/whatsapp-smoke.mjs",
+    "smoke:whatsapp": "node --experimental-sqlite scripts/whatsapp-smoke.mjs && node scripts/whatsapp-security-smoke.mjs",
     "smoke:project": "node --experimental-sqlite scripts/project-store-smoke.mjs"
   }
 }
