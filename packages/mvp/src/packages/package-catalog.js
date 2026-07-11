@@ -1,15 +1,13 @@
 export const PACKAGE_CODES = Object.freeze({
   LEVEL_1: "level_1",
   PACKAGE_A: "package_a",
-  PACKAGE_B: "package_b",
-  PACKAGE_C: "package_c"
+  PACKAGE_B: "package_b"
 });
 
 export const ENGAGEMENT_LEVELS = Object.freeze({
   ROUGH_QUOTE: "rough_quote",
   PACKAGE_A: "package_a",
   PACKAGE_B: "package_b",
-  PACKAGE_C: "package_c",
   PRODUCTION_ORDER: "production_order"
 });
 
@@ -95,32 +93,6 @@ const CATALOG_SEED = Object.freeze([
     proposalDepth: PROPOSAL_DEPTH.DETAILED,
     maxRevisions: 1,
     sortOrder: 3
-  },
-  {
-    code: PACKAGE_CODES.PACKAGE_C,
-    name: "Package C — Designer / 3D Handoff",
-    priceKzt: 0,
-    priceConfigurable: true,
-    creditedOnOrder: true,
-    deliverables: [
-      "color_multi_view_visual",
-      "commercial_proposal",
-      "detailed_dimensions",
-      "material_spec",
-      "skp_model",
-      "obj_model",
-      "glb_model",
-      "viewer_link"
-    ],
-    engagementLevel: ENGAGEMENT_LEVELS.PACKAGE_C,
-    visualState: VISUAL_STATE.COLOR_MULTI_VIEW,
-    proposalDepth: PROPOSAL_DEPTH.DETAILED,
-    maxRevisions: 2,
-    sortOrder: 4,
-    targetUserType: "interior_designer",
-    designerHandoffRequired: true,
-    required3dFormats: ["skp", "obj", "glb"],
-    fileAccessPolicy: "package_c_full"
   }
 ]);
 

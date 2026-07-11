@@ -2,16 +2,6 @@ import { PACKAGE_CODES } from "../packages/package-catalog.js";
 
 const INTENT_RULES = [
   {
-    packageCode: "package_c_candidate",
-    keywords: [
-      "sketchup", "skp", "3d файл", "3d-файл",
-      "obj", "glb", "fbx", "stl",
-      "дизайнер", "дизайнера", "3d модель",
-      "three.js", "threejs", "viewer"
-    ],
-    weight: 4
-  },
-  {
     packageCode: PACKAGE_CODES.PACKAGE_B,
     keywords: [
       "визуал", "как будет", "цветн", "цвет", "3d визуал",
@@ -47,14 +37,6 @@ function normalizeText(text) {
     .replace(/[^a-zа-я0-9\s_]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function scoreIntent(normalizedText, rule) {
-  let hits = 0;
-  for (const kw of rule.keywords) {
-    if (normalizedText.includes(kw)) hits++;
-  }
-  return hits * rule.weight;
 }
 
 export function classifyIntent(userMessage) {
@@ -141,23 +123,6 @@ export function suggestClarifyingQuestions(intent, context) {
       questions.push({
         field: "materials",
         question: "Есть ли у вас фото помещения или план? Это поможет точнее подобрать компоновку.",
-        required: false
-      });
-    }
-  }
-
-  if (intent.packageCode === "package_c_candidate") {
-    if (!context?.has3dFiles) {
-      questions.push({
-        field: "format",
-        question: "В каком формате у вас 3D-модель? SKP, OBJ, GLB, FBX?",
-        required: true
-      });
-    }
-    if (!context?.targetUser) {
-      questions.push({
-        field: "target_user",
-        question: "Для кого подготовить файлы: для дизайнера интерьера, для себя, для подрядчика?",
         required: false
       });
     }
