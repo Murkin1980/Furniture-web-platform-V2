@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Furniture Platform V2 — Project Progress</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --header-bg: #1e293b;
+    --header-fg: #f8fafc;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --green-border: #bbf7d0;
+    --blue: #2563eb;
+    --blue-bg: #eff6ff;
+    --blue-border: #bfdbfe;
+    --orange: #d97706;
+    --orange-bg: #fffbeb;
+    --orange-border: #fde68a;
+    --gray: #94a3b8;
+    --gray-bg: #f1f5f9;
+    --gray-border: #e2e8f0;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --red-border: #fecaca;
+    --border: #e2e8f0;
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  .header {
+    background: var(--header-bg);
+    color: var(--header-fg);
+    padding: 2rem 1.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .header .subtitle {
+    font-size: 1rem;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+  }
+
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .header-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .header-meta .meta-label {
+    opacity: 0.6;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .header-meta .meta-value {
+    font-weight: 600;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  .section {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+  .badge-orange { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+  .badge-gray { background: var(--gray-bg); color: var(--gray); border: 1px solid var(--gray-border); }
+  .badge-red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+  .simplicity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid var(--green-border);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .arch-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+  }
+
+  .arch-list li {
+    padding: 0.25rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+    font-size: 0.9rem;
+  }
+
+  .arch-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .price-cell {
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 0.375rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-bottom: 1rem;
+    padding-left: 0.5rem;
+  }
+
+  .timeline-item:last-child { padding-bottom: 0; }
+
+  .timeline-dot {
+    position: absolute;
+    left: -1.125rem;
+    top: 0.375rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--card);
+  }
+
+  .timeline-dot-green { background: var(--green); }
+  .timeline-dot-blue { background: var(--blue); }
+  .timeline-dot-orange { background: var(--orange); }
+  .timeline-dot-gray { background: var(--gray); }
+
+  .timeline-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .timeline-status {
+    font-size: 0.8rem;
+    margin-top: 0.125rem;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .summary-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .summary-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .test-total {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .test-detail {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+
+  .deferred-list {
+    columns: 2;
+    column-gap: 1.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .deferred-list li {
+    padding: 0.25rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+    font-size: 0.875rem;
+    break-inside: avoid;
+  }
+
+  .deferred-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+  }
+
+  .change-table td:first-child {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .change-table td:nth-child(3) {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.8rem;
+  }
+
+  .commit-hash {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+
+  .update-rule {
+    background: var(--orange-bg);
+    border: 1px solid var(--orange-border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: var(--orange);
+  }
+
+  .update-rule strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 700px) {
+    .two-col, .summary-grid { grid-template-columns: 1fr; }
+    .deferred-list { columns: 1; }
+    .header { padding: 1.25rem 1rem; }
+    .header h1 { font-size: 1.375rem; }
+    .container { padding: 1rem; }
+  }
+
+  @media print {
+    body { background: white; }
+    .header { background: var(--header-bg) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { break-inside: avoid; }
+    .section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Furniture Platform V2</h1>
+  <div class="subtitle">Project Progress Dashboard</div>
+  <div class="header-meta">
+    <div class="meta-item">
+      <span class="meta-label">Overall Status</span>
+      <span class="meta-value"><span class="badge badge-green">On Track</span></span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Current Phase</span>
+      <span class="meta-value">Phase 4.2 complete</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Last Updated</span>
+      <span class="meta-value">2026-07-12</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Latest Accepted Commit</span>
+      <span class="meta-value commit-hash" title="1f7940ea314be9d70dbcc317827ede009e20de7c">1f7940e</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Architecture Summary -->
+  <div class="section">
+    <div class="section-title">
+      <span class="simplicity-badge">&#10003; Simplicity First</span>
+      Architecture Summary
+    </div>
+    <div class="card">
+      <ul class="arch-list">
+        <li>One repository</li>
+        <li>One Cloudflare Pages project</li>
+        <li><strong>packages/mvp</strong> — the only production runtime</li>
+        <li>One D1 database</li>
+        <li>No queues</li>
+        <li>No separate workers</li>
+        <li>No separate orchestrator runtime</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Active Commercial Line -->
+  <div class="section">
+    <div class="section-title">Active Commercial Line</div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Status</th>
+            <th style="text-align:right">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Level 1</td>
+            <td><span class="badge badge-green">Active</span></td>
+            <td class="price-cell">0 &#x442;&#x433;</td>
+          </tr>
+          <tr>
+            <td>Package A</td>
+            <td><span class="badge badge-green">Active</span></td>
+            <td class="price-cell">10 000 &#x442;&#x433;</td>
+          </tr>
+          <tr>
+            <td>Package B</td>
+            <td><span class="badge badge-green">Active</span></td>
+            <td class="price-cell">20 000 &#x442;&#x433;</td>
+          </tr>
+          <tr>
+            <td>Package C</td>
+            <td><span class="badge badge-orange">Deferred / non-sellable</span></td>
+            <td class="price-cell">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase Timeline -->
+  <div class="section">
+    <div class="section-title">Phase Timeline</div>
+    <div class="card">
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-green"></div>
+          <div class="timeline-label">Simplicity First review</div>
+          <div class="timeline-status"><span class="badge badge-green">complete</span></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-green"></div>
+          <div class="timeline-label">Phase 4.1 &mdash; Package A end-to-end proof</div>
+          <div class="timeline-status"><span class="badge badge-green">complete</span></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-green"></div>
+          <div class="timeline-label">Phase 4.2 &mdash; Package B end-to-end proof</div>
+          <div class="timeline-status"><span class="badge badge-green">complete</span></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-gray"></div>
+          <div class="timeline-label">Next approved stage</div>
+          <div class="timeline-status"><span class="badge badge-gray">pending</span> &mdash; not yet approved</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-orange"></div>
+          <div class="timeline-label">Package C &mdash; Designer / 3D Handoff</div>
+          <div class="timeline-status"><span class="badge badge-orange">deferred</span></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-orange"></div>
+          <div class="timeline-label">Orchestrator runtime</div>
+          <div class="timeline-status"><span class="badge badge-orange">deferred</span></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-orange"></div>
+          <div class="timeline-label">Automatic WhatsApp webhook</div>
+          <div class="timeline-status"><span class="badge badge-orange">deferred</span></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot timeline-dot-orange"></div>
+          <div class="timeline-label">AI / OCR / 3D automation</div>
+          <div class="timeline-status"><span class="badge badge-orange">deferred</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Package Summaries -->
+  <div class="section">
+    <div class="two-col">
+      <!-- Package A -->
+      <div class="card">
+        <div class="section-title" style="font-size:1rem; margin-bottom:0.5rem;">Package A Summary</div>
+        <ul class="arch-list">
+          <li>Price: 10 000 &#x442;&#x433;</li>
+          <li>Payment verified</li>
+          <li>Deliverable handoff gate verified</li>
+          <li>Supplier-aware estimate verified</li>
+          <li>Credit-on-order: 10 000 &#x442;&#x433;</li>
+          <li>Duplicate credit protection verified</li>
+          <li>Smoke result: <strong>43/43</strong></li>
+        </ul>
+      </div>
+
+      <!-- Package B -->
+      <div class="card">
+        <div class="section-title" style="font-size:1rem; margin-bottom:0.5rem;">Package B Summary</div>
+        <ul class="arch-list">
+          <li>Price: 20 000 &#x442;&#x433;</li>
+          <li>Payment: 20 000 &#x442;&#x433;</li>
+          <li>Color multi-view visuals</li>
+          <li>Dimensions sheet</li>
+          <li>Inclusions and exclusions sheet</li>
+          <li>One revision round</li>
+          <li>Second revision blocked</li>
+          <li>Manager approval gate</li>
+          <li>Supplier-aware estimate</li>
+          <li>Credit-on-order: 20 000 &#x442;&#x433;</li>
+          <li>Duplicate credit protection</li>
+          <li>Smoke result: <strong>112/112</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Summary -->
+  <div class="section">
+    <div class="section-title">Test Summary</div>
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+        <div class="test-total">601</div>
+        <div>
+          <div style="font-weight:600; font-size:1rem;">tests passed</div>
+          <div class="test-detail">0 failures</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th style="text-align:right">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Core smoke (packages + suppliers + advisor)</td>
+            <td class="price-cell"><span class="badge badge-green">446 / 446</span></td>
+          </tr>
+          <tr>
+            <td>Package A end-to-end</td>
+            <td class="price-cell"><span class="badge badge-green">43 / 43</span></td>
+          </tr>
+          <tr>
+            <td>Package B end-to-end</td>
+            <td class="price-cell"><span class="badge badge-green">112 / 112</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Total</td>
+            <td class="price-cell" style="font-weight:600;"><span class="badge badge-green">601 / 601</span></td>
+          </tr>
+          <tr>
+            <td>Failures</td>
+            <td class="price-cell"><span class="badge badge-green">0</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Build & Production Boundary -->
+  <div class="section">
+    <div class="section-title">Build &amp; Production Boundary</div>
+    <div class="card">
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">npm run check</span>
+          <span class="summary-value"><span class="badge badge-green">PASS</span></span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">npm run build</span>
+          <span class="summary-value"><span class="badge badge-green">PASS</span> MVP-only</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Orchestrator in .wrangler/dist</span>
+          <span class="summary-value"><span class="badge badge-green">Absent</span></span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">New runtime</span>
+          <span class="summary-value"><span class="badge badge-green">None</span></span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">New database</span>
+          <span class="summary-value"><span class="badge badge-green">None</span></span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Deferred module activated</span>
+          <span class="summary-value"><span class="badge badge-green">None</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deferred Scope -->
+  <div class="section">
+    <div class="section-title">Deferred Scope</div>
+    <div class="card">
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+        <span class="badge badge-orange">Deferred</span> &mdash; not part of current production MVP
+      </p>
+      <ul class="deferred-list">
+        <li>Package C</li>
+        <li>Orchestrator runtime</li>
+        <li>Automatic WhatsApp webhook</li>
+        <li>AI replies</li>
+        <li>Automatic OCR</li>
+        <li>Automatic AI processing</li>
+        <li>Automatic 3D generation</li>
+        <li>GLB viewer</li>
+        <li>Public share links</li>
+        <li>Queues</li>
+        <li>Background workers</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Next Stage -->
+  <div class="section">
+    <div class="section-title">Next Approved Stage</div>
+    <div class="card">
+      <p style="color:var(--text-secondary); font-style:italic;">Not yet approved</p>
+    </div>
+  </div>
+
+  <!-- Change History -->
+  <div class="section">
+    <div class="section-title">Change History</div>
+    <div class="card">
+      <table class="change-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Phase</th>
+            <th>Commit</th>
+            <th>Result</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026-07-11</td>
+            <td>Phase 4.1</td>
+            <td><span class="commit-hash" title="5382ba2e7e9a06520807f655f9b34d4fa3339f4f">5382ba2</span></td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Package A end-to-end commercial proof &mdash; 43/43</td>
+          </tr>
+          <tr>
+            <td>2026-07-12</td>
+            <td>Phase 4.2</td>
+            <td><span class="commit-hash" title="1f7940ea314be9d70dbcc317827ede009e20de7c">1f7940e</span></td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Package B end-to-end commercial proof &mdash; 112/112</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mandatory Update Rule -->
+  <div class="section">
+    <div class="update-rule">
+      <strong>&#9888; Mandatory Update Rule</strong>
+      Whenever any project stage is completed, this dashboard must be updated in the same commit or an immediately following documentation-only commit. A stage must not be reported as complete until <code>docs/PROJECT_PROGRESS.html</code> has been updated. All values must be derived from actual repository state &mdash; never guessed or invented.
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  Furniture Platform V2 &mdash; Project Progress Dashboard &mdash; Last updated: 2026-07-12
+</footer>
+
+</body>
+</html>
