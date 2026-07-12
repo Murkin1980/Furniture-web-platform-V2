@@ -137,6 +137,11 @@ export async function transitionEngagement({ db, engagementId, toStatus, visualS
       `Engagement cannot transition from "${current.status}" to "${toStatus}".`);
   }
 
+  if (toStatus === ENGAGEMENT_STATUS.PAID) {
+    const paymentGate = await checkConfirmedPaymentGate(db, current);
+    if (!paymentGate.ok) return paymentGate;
+  }
+
   if (toStatus === ENGAGEMENT_STATUS.DELIVERED) {
     const deliverableGate = await checkDeliverableHandoffGate(db, id);
     if (!deliverableGate.ok) return deliverableGate;
@@ -216,6 +221,25 @@ function statusTimestampColumn(status) {
   }
 }
 
+async function checkConfirmedPaymentGate(db, engagement) {
+  const payment = await db.prepare(
+    `SELECT id, amount_kzt AS amountKzt
+     FROM package_payments
+     WHERE engagement_id = ? AND status = 'confirmed' AND amount_kzt = ?
+     ORDER BY confirmed_at DESC, id DESC
+     LIMIT 1`
+  ).bind(engagement.id, engagement.priceKzt).first();
+
+  if (!payment) {
+    return errorResult(
+      409,
+      "payment_confirmation_required",
+      "Engagement can transition to paid only after a confirmed payment matching the engagement price."
+    );
+  }
+  return okResult({ paymentId: payment.id });
+}
+
 async function checkDeliverableHandoffGate(db, engagementId) {
   const result = await db.prepare(
     `SELECT COUNT(*) AS total,
@@ -258,9 +282,9 @@ async function recordConversionEvent(db, { orderId, engagementId, fromLevel, toL
 
 function storageFailure(error) {
   if (/unique|constraint/i.test(String(error?.message || error))) {
-    return errorResult(409, "engagement_conflict", "Engagement could not be saved because of a constraint conflict.");
+    return errorResult(409, "engagement_conflict", "Package engagement could not be saved.");
   }
-  return errorResult(500, "engagement_storage_failed", "Package engagement could not be stored.");
+  return errorResult(500, "engagement_storage_failed", "Package engagement could not be saved.");
 }
 
 function positiveInteger(value) {
