@@ -9,7 +9,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "npm run check -w @furniture/mvp && npm run check:build",
-    "bundle:functions": "npx wrangler pages functions build .wrangler/dist/functions --outfile .wrangler/dist/public/_worker.js --project-directory .wrangler/dist --build-output-directory .wrangler/dist/public --compatibility-date 2026-06-28",
+    "bundle:functions": "node scripts/bundle-functions.mjs",
     "check:build": "npm run build && npm run bundle:functions && node scripts/verify-build.mjs",
     "dev": "npm run build && wrangler pages dev .wrangler/dist/public --binding RUNTIME_SCHEMA_INIT=true --binding ADMIN_TOKEN=dev-admin-token --compatibility-date=2026-06-28 --persist-to=.wrangler/state",
     "deploy": "npm run build && npm run bundle:functions && npx wrangler pages deploy .wrangler/dist/public --project-name=furniture-platform-v2",
