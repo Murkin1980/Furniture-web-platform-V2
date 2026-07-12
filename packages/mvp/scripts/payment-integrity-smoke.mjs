@@ -53,8 +53,8 @@ for (const file of ["0001_packages.sql", "0002_package_payments.sql"]) {
 
 sqlite.exec(`
   INSERT INTO clients (name, phone) VALUES ('Payment Integrity Client', '+77000000000');
-  INSERT INTO orders (client_id, title, status, engagement_level)
-  VALUES (1, 'Payment integrity order', 'new', 'rough_quote');
+  INSERT INTO orders (client_id, status, engagement_level)
+  VALUES (1, 'new', 'rough_quote');
 `);
 
 const db = makeD1(sqlite);

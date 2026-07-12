@@ -321,8 +321,12 @@ console.log("D1 store smoke (real SQLite via node:sqlite)");
   assertEqual(acceptResult.body.item.status, ENGAGEMENT_STATUS.ACCEPTED, "status is accepted");
   assert(!!acceptResult.body.item.acceptedAt, "acceptedAt is set");
 
-  const payResult = await transitionEngagement({ db, engagementId, toStatus: ENGAGEMENT_STATUS.PAID });
-  assert(payResult.ok, "transition to paid succeeds");
+  const paymentResult = await createPayment({ db, engagementId, amountKzt: 10000, method: "kaspi" });
+  assert(paymentResult.ok, "matching package_a payment is created");
+  const confirmResult = await confirmPayment({ db, paymentId: paymentResult.body.item.id });
+  assert(confirmResult.ok, "matching package_a payment is confirmed");
+  const payResult = await getEngagement({ db, engagementId });
+  assertEqual(payResult.body.item.status, ENGAGEMENT_STATUS.PAID, "confirmed payment transitions engagement to paid");
 
   const badTransition = await transitionEngagement({ db, engagementId, toStatus: ENGAGEMENT_STATUS.DELIVERED });
   assert(!badTransition.ok, "paid -> delivered is blocked (must go through in_progress)");
@@ -468,7 +472,8 @@ console.log("Payment store smoke");
   assert(doubleConfirm.ok, "double confirm is idempotent");
 
   const createdB = await createEngagement({ db, orderId, packageCode: PACKAGE_CODES.PACKAGE_B });
-  const cancelledPayment = await createPayment({ db, engagementId: createdB.body.item.id, amountKzt: 5000 });
+  const cancelledPayment = await createPayment({ db, engagementId: createdB.body.item.id, amountKzt: 20000 });
+  assert(cancelledPayment.ok, "second pending payment can be created for cancellation");
   const cancelResult = await cancelPayment({ db, paymentId: cancelledPayment.body.item.id });
   assert(cancelResult.ok, "cancelPayment succeeds");
   assertEqual(cancelResult.body.item.status, "cancelled", "payment is cancelled");
