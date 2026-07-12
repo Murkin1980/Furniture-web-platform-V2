@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 const DANGEROUS_MIME_TYPES = new Set([
   "application/x-executable",
   "application/x-msdownload",
@@ -110,8 +108,10 @@ export async function listProjectFiles({ db, orderId, engagementId, fileType, li
   return okResult({ items: result?.results || [] });
 }
 
-function hashToken(token) {
-  return createHash("sha256").update(String(token)).digest("hex");
+async function hashToken(token) {
+  const bytes = new TextEncoder().encode(String(token));
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export async function createShareLink({ db, orderId, engagementId, accessLevel, expiresAt, downloadEnabled, commentEnabled, approvalEnabled }) {
@@ -124,7 +124,7 @@ export async function createShareLink({ db, orderId, engagementId, accessLevel, 
   }
 
   const token = generateToken();
-  const tokenHash = hashToken(token);
+  const tokenHash = await hashToken(token);
 
   const result = await db.prepare(
     `INSERT INTO project_share_links (order_id, engagement_id, token_hash, access_level, expires_at, download_enabled, comment_enabled, approval_enabled)
@@ -147,7 +147,7 @@ export async function getShareLinkByToken({ db, token }) {
     return errorResult(400, "invalid_token", "token is required.");
   }
 
-  const tokenHash = hashToken(token);
+  const tokenHash = await hashToken(token);
   const row = await db.prepare(
     `SELECT id, order_id AS orderId, engagement_id AS engagementId, access_level AS accessLevel,
             expires_at AS expiresAt, download_enabled AS downloadEnabled,
@@ -220,10 +220,10 @@ export async function listShareComments({ db, linkId, limit = 100, offset = 0 })
 
 function generateToken() {
   const bytes = new Uint8Array(32);
-  globalThis.crypto?.getRandomValues?.(bytes);
-  if (!bytes[0]) {
-    for (let i = 0; i < 32; i++) bytes[i] = Math.floor(Math.random() * 256);
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error("crypto.getRandomValues is required to create share links.");
   }
+  globalThis.crypto.getRandomValues(bytes);
   return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
 }
 
