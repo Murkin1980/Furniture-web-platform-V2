@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "npm run check -w @furniture/mvp",
+    "check": "npm run check -w @furniture/mvp && npm run check:build",
+    "check:build": "npm run build && node scripts/verify-build.mjs",
     "dev": "npm run build && wrangler pages dev .wrangler/dist/public --binding RUNTIME_SCHEMA_INIT=true --binding ADMIN_TOKEN=dev-admin-token --compatibility-date=2026-06-28 --persist-to=.wrangler/state",
     "deploy": "npm run build && wrangler pages deploy .wrangler/dist/public --project-name=furniture-platform-v2",
     "db:create": "wrangler d1 create furniture-platform-v2",
@@ -23,7 +24,14 @@
     "smoke:orchestrator": "npm run smoke -w @furniture/orchestrator",
     "smoke:e2e": "npm run smoke:e2e -w @furniture/orchestrator",
     "smoke:hardening": "npm run smoke:hardening -w @furniture/orchestrator",
-    "smoke:all": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor && npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e && npm run smoke:hardening"
+    "smoke:core": "npm run smoke:packages && npm run smoke:suppliers && npm run smoke:advisor",
+    "smoke:phase41:a": "npm run smoke:phase41:a -w @furniture/mvp",
+    "smoke:phase42:b": "npm run smoke:phase42:b -w @furniture/mvp",
+    "smoke:phase43": "npm run smoke:phase43 -w @furniture/mvp",
+    "smoke:production": "npm run smoke:production -w @furniture/mvp",
+    "smoke:payment-integrity": "npm run smoke:payment-integrity -w @furniture/mvp",
+    "smoke:deferred": "npm run smoke:ai && npm run smoke:whatsapp && npm run smoke:project && npm run smoke:orchestrator && npm run smoke:e2e && npm run smoke:hardening",
+    "smoke:all": "npm run smoke:core && npm run smoke:phase41:a && npm run smoke:phase42:b && npm run smoke:phase43 && npm run smoke:payment-integrity"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

@@ -49,6 +49,14 @@ export async function createPayment({ db, engagementId, amountKzt, method, refer
       "Payment can only be recorded for accepted or offered engagements.");
   }
 
+  if (amount !== Number(item.priceKzt)) {
+    return errorResult(
+      409,
+      "payment_amount_mismatch",
+      `Payment amount must exactly match the engagement price of ${item.priceKzt} KZT.`
+    );
+  }
+
   try {
     const insert = await db.prepare(
       `INSERT INTO package_payments (engagement_id, order_id, amount_kzt, method, status, reference, created_by)
@@ -75,13 +83,24 @@ export async function confirmPayment({ db, paymentId, createdBy = "manager" }) {
     return errorResult(409, "invalid_payment_status", "Only pending payments can be confirmed.");
   }
 
+  const engagement = await getEngagement({ db, engagementId: payment.engagementId });
+  if (!engagement.ok) return engagement;
+  const engagementItem = engagement.body.item;
+
+  if (Number(payment.amountKzt) !== Number(engagementItem.priceKzt)) {
+    return errorResult(
+      409,
+      "payment_amount_mismatch",
+      `Payment amount must exactly match the engagement price of ${engagementItem.priceKzt} KZT.`
+    );
+  }
+
   try {
     await db.prepare(
       `UPDATE package_payments SET status = 'confirmed', confirmed_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'`
     ).bind(id).run();
 
-    const engagement = await getEngagement({ db, engagementId: payment.engagementId });
-    if (engagement.ok && engagement.body.item.status === ENGAGEMENT_STATUS.OFFERED) {
+    if (engagementItem.status === ENGAGEMENT_STATUS.OFFERED) {
       const accept = await transitionEngagement({
         db, engagementId: payment.engagementId, toStatus: ENGAGEMENT_STATUS.ACCEPTED
       });

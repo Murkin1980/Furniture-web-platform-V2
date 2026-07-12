@@ -1,148 +1,207 @@
 # V2 Stage Checklist
 
-Чек-лист фаз второй версии платформы мебели.
-Порядок реализации соответствует приоритетам из `v2-roadmap.md`.
+Чек-лист второй версии Furniture Web Platform после применения Simplicity First.
 
-## Фаза 1 — Коммерческая упаковка (денежная, короткая)
+## Production boundary
 
-Цель: платные проектные пакеты 10 000 тг и 20 000 тг становятся штатной частью sales flow.
+- [x] Один Cloudflare Pages production project
+- [x] `packages/mvp` — единственный production runtime
+- [x] Одна production D1 база
+- [x] Package C помечен как draft и non-sellable
+- [x] Engagement для non-sellable package блокируется
+- [x] Core и deferred smoke разделены
+- [ ] Локально выполнить `npm run check`
+- [ ] Локально выполнить `npm run smoke:all`
+- [ ] Локально выполнить `npm run build`
+- [ ] Обновить ветку относительно `main` и устранить merge conflict PR #2
+- [ ] Merge PR #2 после успешной проверки
 
-**Статус: завершена ✅**
+## Phase 1 — Коммерческая упаковка ✅
 
-### 1.1 Product/Package model и CRM states
-- [x] Спроектировать сущности `engagementLevel`, `servicePackage`, `creditedOnOrder`, `proposalDepth`, `revisionRound`, `sourceMaterialType`, `upgradeOfferState`, `visualState`
-- [x] Миграция БД: таблицы пакетов, продуктовых уровней, зачёта в заказ
-- [x] Backend: package catalog (Package A 10 000 тг, Package B 20 000 тг, Level 1 free rough quote)
-- [x] Backend: credit-on-order policy (стоимость пакета зачитывается в заказ)
+- [x] Level 1, Package A, Package B
+- [x] Package catalog и engagement lifecycle
+- [x] Payment binding
+- [x] Credit-on-order
+- [x] CRM states
+- [x] Upsell templates
+- [x] Package conversion analytics
 
-### 1.2 Коммерческая упаковка пакетов
-- [x] Шаблоны клиентских сообщений для upsell (rough quote → 10k → 20k → order)
-- [x] Новые статусы в CRM для отслеживания пакетов
-- [x] Менеджерский UI выбора платного пакета вместо «сделать КП»
-- [x] Платёжная привязка пакета к заказу (учёт оплаты пакета)
+## Phase 2 — Управляемые deliverables ✅
 
-### 1.3 Аналитика конверсии пакетов
-- [x] Метрики: rough quote → 10k, 10k → 20k, paid packages → order
-- [x] Метрики: среднее время подготовки пакета, правок на пакет, доля зачтённых в заказ
-- [x] Дашборд конверсии воронки вовлечения
+- [x] BW preview для Package A
+- [x] Color multi-view для Package B
+- [x] Dimensions sheet
+- [x] Revision workflow
+- [x] Deliverable lifecycle
+- [x] Manager-facing package state
 
-### 1.4 Smoke и проверки фазы 1
-- [x] Миграции применены (local + remote D1)
-- [x] Package lifecycle smoke (create → pay → credit-on-order → order) — 104/104 passed
-- [x] Production API smoke (packages, templates, analytics — 200)
-- [x] Analytics pipeline smoke
-- [x] README и PROJECT_PROGRESS обновлены
+## Phase 3 — PDF intake ✅
 
-## Фаза 2 — Управляемый визуал
+- [x] Manager-facing PDF upload
+- [x] PDF manifest и extraction contracts
+- [x] Furniture zones и размеры
+- [x] Proposal draft
+- [x] Human review gate
 
-Цель: предсказуемые форматы результата — preview sheet, colored view set, dimensions sheet, revision round, package state.
+## Phase 4 — Supplier-aware pricing ✅
 
-**Статус: завершена ✅**
-
-- [x] Стандарт BW preview (Package A): формат, ракурс, артефакт
-- [x] Стандарт color multi-view (Package B): 2–3 варианта компоновки, ракурсы, лист «входит/не входит»
-- [x] Dimensions sheet контракт
-- [x] Revision round workflow (один раунд корректировок для Package B)
-- [x] Финальный package state в CRM и order context
-- [x] Smoke: полный deliverable lifecycle для каждого пакета
-
-## Фаза 3 — PDF intake и полуавтоматическое проектирование
-
-Цель: менеджер использует PDF intake как ускоритель подготовки proposal, размеров и визуала с human review.
-
-**Статус: завершена ✅**
-
-- [x] PDF upload workflow (manager-facing)
-- [x] Draft proposal из PDF manifest + room/furniture-zone extraction
-- [x] Размеры мебели из PDF в proposal
-- [x] Human review gate перед коммерческим использованием
-- [x] Smoke: PDF → draft proposal → review → publish
-
-## Фаза 4 — Supplier-aware pricing
-
-Цель: смета по позициям строится из актуализированных поставщиков, материалов и ценовых слоёв.
-
-**Статус: завершена ✅**
-
-- [x] Versioned supplier catalog (schema + миграции)
-- [x] Controlled price-list workflow (импорт, версии, аудит)
+- [x] Versioned supplier catalog
+- [x] Controlled price-list workflow
+- [x] Supplier price items
 - [x] Supplier-aware estimate builder
-- [x] Supplier pricing влияет на Package A и B смету
-- [x] Smoke: supplier version → estimate → proposal (318/318)
+- [x] Связь estimate с Package A/B
 
-## Фаза 5 — Controlled 3D upgrade
+# Текущая активная стадия
 
-Цель: Package B за 20 000 тг опционально усиливается более убедительным визуалом без разрушения fail-closed архитектуры.
+## Phase 4.1 — End-to-end commercial proof Package A/B 🚧
 
-- [ ] Geometry/render adapter во внешнем Windows/SketchUp контуре
-- [ ] Integration с существующим sketchup-node-service (fail-closed, HMAC, dry-run по умолчанию)
-- [ ] Optional 3D upgrade flag на Package B
-- [ ] Render artifacts → package deliverable pipeline
-- [ ] Smoke: package B → 3D upgrade request → artifact → package state
+### 4.1.1 Intake и рекомендация
 
-## Фаза 4.5 — Conversational Sales + AI Observability
+- [ ] Создать тестовую входящую заявку Level 1
+- [ ] Проверить deterministic package advisor
+- [ ] Проверить ручное подтверждение рекомендации менеджером
+- [ ] Убедиться, что AI не требуется для выбора пакета
 
-Цель: WhatsApp/AI как безопасный слой продаж без автоответов.
+### 4.1.2 Engagement и оплата
 
-- [x] WhatsApp inbox (входящие, привязка к conversation) — migration 0007, normalize-message, conversation-store, webhook endpoint, 56/56 smoke
-- [x] Conversation-to-order matching — linkToOrder, linkToClient in conversation-store
-- [x] AI package advisor (deterministic + AI-ready) — `src/ai/package-advisor.js`, classifyIntent, suggestClarifyingQuestions, getAdvisorSummary, 35/35 smoke
-- [ ] AI draft replies (без автоотправки)
-- [x] AI audit logs (ai_runs, ai_actions, ai_feedback) — migration 0006, `src/ai/ai-observability.js`, CRUD + lifecycle, 58/58 smoke
-- [ ] Manager feedback loop
-- [ ] Package conversion analytics через WhatsApp
-- [ ] Smoke: webhook → normalize → conversation → advisor → draft → manager approve
+- [ ] Создать Package A engagement
+- [ ] Зарегистрировать оплату Package A
+- [ ] Создать Package B engagement
+- [ ] Зарегистрировать оплату Package B
+- [x] Заблокировать engagement для Package C/draft package
 
-## Фаза 4.6 — Package C + Project Share Viewer
+### 4.1.3 Подготовка результата
 
-Цель: Designer/3D Handoff пакет + публичный viewer для клиента.
+- [ ] Создать deliverables для Package A
+- [ ] Создать deliverables для Package B
+- [ ] Проверить revision workflow Package B
+- [ ] Построить supplier-aware estimate
+- [ ] Пройти manager approval
+- [ ] Подготовить безопасную клиентскую выдачу
 
-### 4.6a Package C model
-- [x] package_c в catalog (price configurable, targetUserType, required3dFormats, fileAccessPolicy)
-- [x] includedDeliverables: 3D formats (SKP/OBJ/GLB), dimensions, material_spec, viewer_link
-- [x] Smoke: package_c → catalog valid, 61/61 assertions
+### 4.1.4 Конвертация в мебельный заказ
 
-### 4.6b Project files registry
-- [x] Таблица project_files (migration 0008, file_type, storage_key, mime_type, sha256, download_allowed)
-- [x] Валидация MIME (опасные типы отклоняются)
-- [x] Download control (grant/revoke)
-- [x] Smoke: register file → download denied → grant → download ok
+- [ ] Перевести Package A engagement в order
+- [ ] Применить credit-on-order Package A
+- [ ] Перевести Package B engagement в order
+- [ ] Применить credit-on-order Package B
+- [ ] Проверить итоговую сумму заказа
 
-### 4.6c Share links
-- [x] Таблица project_share_links + project_share_comments (migration 0008)
-- [x] createShareLink, getShareLinkByToken (token-hash), revokeShareLink, expiry check
-- [x] addShareComment, listShareComments (comment-enabled gate)
-- [x] Smoke: create link → view → comment → revoke → expire
+### 4.1.5 Сквозная проверка
 
-### 4.6d GLB viewer
-- [ ] Загрузка .glb в браузере
-- [ ] Rotate/zoom интерфейс
-- [ ] Список файлов + download button (если разрешено)
-- [ ] Smoke: upload GLB → viewer renders → download check
+- [ ] Добавить единый smoke/integration test Package A
+- [ ] Добавить единый smoke/integration test Package B
+- [ ] Проверить, что core flow работает без WhatsApp
+- [ ] Проверить, что core flow работает без orchestrator
+- [ ] Проверить, что core flow работает без AI provider
+- [ ] Проверить, что клиент не получает internal/unapproved files
 
-## Фаза 5.1 — Designer handoff files SKP/OBJ/GLB
+### Acceptance Phase 4.1
 
-- [ ] Генерация/регистрация SKP/OBJ/GLB файлов для Package C
-- [ ] File roles и access control
-- [ ] Smoke: Package C → file generation → download → access check
+- [ ] Package A проходит end to end
+- [ ] Package B проходит end to end
+- [ ] Оплата корректно засчитывается в заказ
+- [ ] Менеджер видит текущий статус и следующий шаг
+- [ ] `npm run smoke:all` покрывает production commercial path
+- [ ] Production build не зависит от deferred modules
 
-## Фаза 5.2 — GLB web viewer
+## Phase 4.2 — Operational proof and measurement ⏳
 
-- [ ] Продвинутый GLB viewer (материалы, освещение)
-- [ ] File switching в viewer
-- [ ] Smoke: multi-file viewer → material render
+Активируется после Phase 4.1.
 
-## Фаза 5.3 — Optional Kuula-like 360 tour
+- [ ] Провести не менее 5 полных тестовых или реальных кейсов
+- [ ] Измерить conversion Level 1 → Package A
+- [ ] Измерить conversion Package A → Package B
+- [ ] Измерить conversion paid package → order
+- [ ] Измерить среднее время подготовки
+- [ ] Измерить количество ручных действий
+- [ ] Измерить число правок
+- [ ] Оценить маржинальность пакетов
+- [ ] Выявить три самых дорогих ручных шага
+- [ ] Выбрать одну следующую автоматизацию на основании данных
 
-- [ ] 360° panorama viewer
-- [ ] Hotspots на мебель
-- [ ] Smoke: panorama → hotspot → file link
+## Phase 5 — Controlled 3D upgrade Package B ⏳
 
-## Общие ритуалы (каждая фаза)
+Активируется только после Phase 4.2 и подтверждённого спроса.
 
-- [ ] Handoff-файл `<project>-stageN-wip-handoff.md` при риске обрыва
-- [ ] Implementation summary `<project>-stageN-implementation-summary.md` после кодового прохода
-- [ ] `PROJECT_PROGRESS.md` и `PROJECT_PROGRESS.html` актуальны
-- [ ] `README.md` обновлён под фактическое состояние
-- [ ] Smoke-скрипты прошли
-- [ ] Рабочие markdown-документы отделены от кодовых коммитов
+- [ ] Optional 3D upgrade flag
+- [ ] Reviewed SketchUp/EasyKitchen adapter
+- [ ] Fail-closed integration
+- [ ] Artifact registration
+- [ ] Manager approval
+- [ ] Graceful fallback на обычный Package B
+- [ ] Smoke: Package B → optional 3D → approved artifact
+
+## Deferred experiments — не production roadmap
+
+### WhatsApp inbound
+
+**Технический статус:** часть foundation реализована.
+**Production status:** deferred / disabled.
+
+- [x] Normalize message foundation
+- [x] Conversation store foundation
+- [x] Webhook endpoint foundation
+- [ ] Activation gate approved
+- [ ] Production webhook security verified
+- [ ] Owner входящих сообщений назначен
+- [ ] Failure не блокирует core sales flow
+
+### AI observability и drafts
+
+**Технический статус:** observability и advisor foundation существуют.
+**Production status:** advisor deterministic; AI drafts deferred.
+
+- [x] AI audit storage foundation
+- [x] Deterministic package advisor
+- [ ] AI draft replies
+- [ ] Manager approval workflow
+- [ ] Quality evaluation на реальных диалогах
+- [ ] Activation gate approved
+
+### Package C
+
+**Технический статус:** model foundation существует.
+**Production status:** draft, not sellable.
+
+- [x] Catalog model
+- [x] Readiness draft
+- [x] `isSellable: false`
+- [x] Engagement guard
+- [ ] Минимум 3 подтверждённых клиентских запроса
+- [ ] Утверждённая цена и состав
+- [ ] Safe file access
+- [ ] Рабочий viewer
+- [ ] Отдельное решение об активации
+
+### Project Share / GLB Viewer
+
+**Технический статус:** часть registry/share foundation существует.
+**Production status:** deferred.
+
+- [x] Project files registry foundation
+- [x] Share link foundation
+- [ ] Production access policy
+- [ ] Expiry/revoke production verification
+- [ ] GLB browser viewer
+- [ ] Public access smoke
+- [ ] Activation gate approved
+
+### Independent orchestrator
+
+**Production status:** not deployed, not required.
+
+- [ ] Измеримая необходимость queue/scheduler/long-running worker
+- [ ] Отдельный deployment decision
+- [ ] Auth and migration boundary
+- [ ] Rollback plan
+- [ ] Independent smoke
+
+## Общие правила
+
+- [ ] `PROJECT_PROGRESS.md` соответствует фактической стадии
+- [ ] `README.md` соответствует production boundary
+- [ ] `v2-roadmap.md` соответствует Simplicity First
+- [ ] Smoke-скрипты пройдены перед merge/deploy
+- [ ] Deferred code не считается production только из-за наличия в репозитории
+- [ ] Новая инфраструктура добавляется только после измеримого ограничения текущего runtime

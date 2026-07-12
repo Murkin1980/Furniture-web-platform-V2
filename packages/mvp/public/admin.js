@@ -7,7 +7,9 @@ const state = {
   payments: [],
   templates: [],
   suppliers: [],
-  selectedSupplierId: null
+  selectedSupplierId: null,
+  clients: [],
+  orders: []
 };
 
 function getToken() {
@@ -63,13 +65,16 @@ function switchView(viewName) {
   if (navItem) navItem.classList.add("active");
   const titles = {
     packages: ["Пакеты", "Каталог продуктовых пакетов V2"],
+    clients: ["Клиенты", "Управление клиентами"],
+    orders: ["Заказы", "Создание и управление заказами"],
     engagements: ["Engagements", "Жизненный цикл пакетных engagements"],
     payments: ["Платежи", "Платёжные записи пакетов"],
     templates: ["Шаблоны сообщений", "Upsell-шаблоны для переходов между пакетами"],
     analytics: ["Аналитика", "Конверсия воронки вовлечения"],
     visual: ["Визуал (Deliverables)", "Продуктовый стандарт выдачи результата"],
     pdf: ["PDF Intake", "Полуавтоматическое проектирование из клиентских PDF"],
-    suppliers: ["Поставщики", "Каталог поставщиков и прайс-листов"]
+    suppliers: ["Поставщики", "Каталог поставщиков и прайс-листов"],
+    launch: ["Запуск", "Production readiness dashboard"]
   };
   const [title, sub] = titles[viewName] || ["", ""];
   document.getElementById("view-title").textContent = title;
@@ -128,6 +133,10 @@ function renderEngagements() {
       <td>
         <button class="secondary" onclick="window._transitionEngagement(${e.id},'accepted')">Accept</button>
         <button class="secondary" onclick="window._showPaymentModal(${e.id},${e.priceKzt})">Оплатить</button>
+        <button class="secondary" onclick="window._transitionEngagement(${e.id},'paid')">Paid</button>
+        <button class="secondary" onclick="window._transitionEngagement(${e.id},'in_progress')">In Progress</button>
+        <button class="secondary" onclick="window._transitionEngagement(${e.id},'delivered')">Delivered</button>
+        <button class="secondary" onclick="window._transitionEngagement(${e.id},'credited')">Credited</button>
         <button class="secondary" onclick="window._transitionEngagement(${e.id},'declined')">Decline</button>
       </td>
     </tr>`).join("")}</tbody>
@@ -333,6 +342,7 @@ function renderDeliverables(items) {
         <button class="secondary" onclick="window._deliverableAction(${d.id},'delivered')">Deliver</button>
         <button class="secondary" onclick="window._showAttachModal(${d.id})">Артефакт</button>
         <button class="secondary" onclick="window._showRevisionModal(${d.id})">Правка</button>
+        <button class="secondary" onclick="window._showResolveRevisionModal(${d.id})">Решить правку</button>
       </td>
     </tr>`).join("")}</tbody>
   </table>`;
@@ -583,6 +593,8 @@ function renderPriceLists(items) {
       ${pl.status === "draft" ? `<button class="secondary" onclick="window._publishPriceList(${pl.id})">Опубликовать</button>` : ""}
       ${pl.status === "published" ? `<button class="secondary" onclick="window._archivePriceList(${pl.id})">Архивировать</button>` : ""}
       <button class="secondary" onclick="window._loadPriceItems(${pl.id})">Позиции</button>
+      <button class="secondary" onclick="window._showAddPriceItemModal(${pl.id})">Добавить позицию</button>
+      <button class="secondary" onclick="window._generateEstimate(${pl.id})">Сгенерировать estimate</button>
     </div>
     <div id="price-items-${pl.id}" style="margin-top:10px"></div>
   </div>`).join("");
@@ -659,5 +671,311 @@ document.getElementById("btn-load-suppliers").onclick = loadSuppliers;
 document.getElementById("btn-create-supplier").onclick = () => window._createSupplier();
 document.getElementById("btn-create-price-list").onclick = () => window._createPriceList();
 document.getElementById("btn-load-price-lists").onclick = loadPriceLists;
+
+/* ── Clients ── */
+
+async function loadClients() {
+  const { ok, data } = await api("/clients");
+  if (!ok) return showStatus(data.message || "Ошибка загрузки клиентов", "bad");
+  state.clients = data.items || [];
+  renderClients();
+  showStatus(`Загружено ${state.clients.length} клиент(ов)`, "ok");
+}
+
+function renderClients() {
+  const el = document.getElementById("client-list");
+  if (!state.clients.length) { el.innerHTML = "<p class='sub'>Нет клиентов</p>"; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Имя</th><th>Телефон</th><th>Email</th><th>Примечание</th><th>Дата</th></tr></thead>
+    <tbody>${state.clients.map((c) => `<tr>
+      <td>${c.id}</td>
+      <td>${esc(c.name)}</td>
+      <td>${esc(c.phone || "—")}</td>
+      <td>${esc(c.email || "—")}</td>
+      <td>${esc(c.note || "—")}</td>
+      <td>${esc(c.createdAt || "")}</td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+window._createClient = async () => {
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Добавить клиента</h2>
+    <label>Имя<input type="text" id="cl-name" placeholder="Иван Иванов" /></label>
+    <label>Телефон<input type="text" id="cl-phone" placeholder="+7 700 123 4567" /></label>
+    <label>Email<input type="text" id="cl-email" placeholder="ivan@example.com" /></label>
+    <label>Примечание<textarea id="cl-note" placeholder="Первый контакт через сайт"></textarea></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-create-client">Создать</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-create-client").onclick = async () => {
+    const { ok, data } = await api("/clients", { method: "POST", body: {
+      name: document.getElementById("cl-name").value,
+      phone: document.getElementById("cl-phone").value,
+      email: document.getElementById("cl-email").value,
+      note: document.getElementById("cl-note").value
+    }});
+    if (!ok) return showStatus(data.message || "Ошибка создания клиента", "bad");
+    showStatus(`Клиент #${data.item.id} создан`, "ok");
+    window._closeModal();
+    loadClients();
+  };
+};
+
+document.getElementById("btn-load-clients").onclick = loadClients;
+document.getElementById("btn-create-client").onclick = () => window._createClient();
+
+/* ── Orders ── */
+
+async function loadOrders() {
+  const clientId = document.getElementById("ord-client-id").value;
+  const path = clientId ? `/orders?clientId=${clientId}` : "/orders";
+  const { ok, data } = await api(path);
+  if (!ok) return showStatus(data.message || "Ошибка загрузки заказов", "bad");
+  state.orders = data.items || [];
+  renderOrders();
+  showStatus(`Загружено ${state.orders.length} заказ(ов)`, "ok");
+}
+
+function renderOrders() {
+  const el = document.getElementById("order-list");
+  if (!state.orders.length) { el.innerHTML = "<p class='sub'>Нет заказов</p>"; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Клиент</th><th>Статус</th><th>Пакет</th><th>Бюджет</th><th>Дата</th><th></th></tr></thead>
+    <tbody>${state.orders.map((o) => `<tr>
+      <td>${o.id}</td>
+      <td>${o.clientId || "—"}</td>
+      <td>${showBadge(o.status)}</td>
+      <td>${esc(o.servicePackage || "—")}</td>
+      <td>${o.budgetKzt ? fmtMoney(o.budgetKzt) : "—"}</td>
+      <td>${esc(o.createdAt || "")}</td>
+      <td><button class="secondary" onclick="window._viewOrderDetail(${o.id})">Подробнее</button></td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+window._viewOrderDetail = async (orderId) => {
+  const { ok, data } = await api(`/orders/${orderId}`);
+  if (!ok) return showStatus(data.message || "Ошибка загрузки заказа", "bad");
+  const order = data.order;
+  const engagements = data.engagements || [];
+  const el = document.getElementById("order-detail");
+  el.classList.remove("hidden");
+  el.innerHTML = `
+    <div class="card">
+      <h2>Заказ #${order.id} — ${showBadge(order.status)}</h2>
+      <div class="sub">Клиент: ${order.clientId} · Пакет: ${esc(order.servicePackage || "—")} · Бюджет: ${order.budgetKzt ? fmtMoney(order.budgetKzt) : "—"}</div>
+      ${order.note ? `<pre style="white-space:pre-wrap;font-family:inherit;font-size:13px;color:var(--muted);margin:8px 0;background:#f4f6f9;padding:12px;border-radius:8px">${esc(order.note)}</pre>` : ""}
+      <h3>Engagements (${engagements.length})</h3>
+      ${engagements.length ? `<table><thead><tr><th>ID</th><th>Пакет</th><th>Статус</th><th>Цена</th><th>Зачёт</th><th>Ревизии</th></tr></thead>
+        <tbody>${engagements.map((e) => `<tr>
+          <td>${e.id}</td>
+          <td><code>${esc(e.packageCode)}</code></td>
+          <td>${showBadge(e.status)}</td>
+          <td>${fmtMoney(e.priceKzt)}</td>
+          <td>${e.creditedAmountKzt ? fmtMoney(e.creditedAmountKzt) : "—"}</td>
+          <td>${e.revisionRound}/${e.maxRevisions}</td>
+        </tr>`).join("")}</tbody></table>` : "<p class='sub'>Нет engagements</p>"}
+    </div>`;
+};
+
+window._createOrder = async () => {
+  const clients = state.clients;
+  if (!clients.length) {
+    const { ok, data } = await api("/clients");
+    if (ok) state.clients = data.items || [];
+  }
+  const clientOptions = state.clients.map((c) => `<option value="${c.id}">${esc(c.name)} (ID: ${c.id})</option>`).join("");
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Создать заказ</h2>
+    <label>Клиент
+      <select id="ord-client">${clientOptions || "<option value=''>Нет клиентов — создайте клиента</option>"}</select>
+    </label>
+    <label>Запрос клиента<textarea id="ord-request" placeholder="Опишите запрос клиента — кухня, шкаф, гардеробная..."></textarea></label>
+    <label>Бюджет (тг)<input type="number" id="ord-budget" placeholder="500000" min="0" /></label>
+    <label>Примечание<textarea id="ord-note" placeholder="Дополнительные примечания"></textarea></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-create-order">Создать</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-create-order").onclick = async () => {
+    const clientId = document.getElementById("ord-client").value;
+    if (!clientId) return showStatus("Выберите клиента", "bad");
+    const requestText = document.getElementById("ord-request").value;
+    const budget = document.getElementById("ord-budget").value;
+    const note = document.getElementById("ord-note").value;
+    const { ok, data } = await api("/orders", { method: "POST", body: {
+      clientId: Number(clientId),
+      requestText,
+      budgetKzt: budget ? Number(budget) : undefined,
+      note
+    }});
+    if (!ok) return showStatus(data.message || "Ошибка создания заказа", "bad");
+    showStatus(`Заказ #${data.item.id} создан`, "ok");
+    window._closeModal();
+    loadOrders();
+  };
+};
+
+document.getElementById("btn-load-orders").onclick = loadOrders;
+document.getElementById("btn-create-order").onclick = () => window._createOrder();
+
+/* ── Resolve Revision Modal ── */
+
+window._showResolveRevisionModal = async (did) => {
+  const { ok, data } = await api(`/deliverables/${did}?revisions=true`);
+  const revisions = ok ? (data.items || []) : [];
+  const pending = revisions.filter((r) => !r.resolvedAt);
+  if (!pending.length) return showStatus("Нет активных правок для этого deliverable", "bad");
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Решить правку для deliverable #${did}</h2>
+    <p class="sub">Активные правки: ${pending.length}</p>
+    <label>ID правки
+      <select id="resolve-rev-id">${pending.map((r) => `<option value="${r.id}">#${r.id} — ${esc(r.requestNote || "без комментария")}</option>`).join("")}</select>
+    </label>
+    <label>Решение<textarea id="resolve-note" placeholder="Опишите как исправлено"></textarea></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-resolve">Решить</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-resolve").onclick = async () => {
+    const revisionId = document.getElementById("resolve-rev-id").value;
+    const resolution = document.getElementById("resolve-note").value;
+    const { ok: resOk, data: resData } = await api(`/deliverables/${did}`, { method: "PATCH", body: { action: "resolve_revision", revisionId: Number(revisionId), resolution } });
+    if (!resOk) return showStatus(resData.message || "Ошибка решения правки", "bad");
+    showStatus(`Правка #${revisionId} решена`, "ok");
+    window._closeModal();
+    loadDeliverables();
+  };
+};
+
+/* ── Add Price Item (inside supplier detail) ── */
+
+window._showAddPriceItemModal = (plId) => {
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Добавить позицию в прайс-лист #${plId}</h2>
+    <label>Тип мебели
+      <select id="pi-type">
+        <option value="kitchen">kitchen</option>
+        <option value="wardrobe">wardrobe</option>
+        <option value="living">living</option>
+        <option value="bedroom">bedroom</option>
+        <option value="bathroom">bathroom</option>
+        <option value="other">other</option>
+      </select>
+    </label>
+    <label>Материал<input type="text" id="pi-material" placeholder="ЛДСП 18мм" /></label>
+    <label>Метка<input type="text" id="pi-label" placeholder="Стандарт ЛДСП" /></label>
+    <label>Базовая цена (тг)<input type="number" id="pi-base" placeholder="45000" min="0" /></label>
+    <label>Цена за единицу (тг)<input type="number" id="pi-unit" placeholder="12000" min="0" /></label>
+    <label>Единица
+      <select id="pi-unit-type">
+        <option value="м.п.">м.п.</option>
+        <option value="шт.">шт.</option>
+        <option value="м2">м2</option>
+      </select>
+    </label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-add-item">Добавить</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-add-item").onclick = async () => {
+    const { ok, data } = await api(`/suppliers/${state.selectedSupplierId}/price-lists`, { method: "POST", body: {
+      action: "add_item",
+      priceListId: plId,
+      furnitureType: document.getElementById("pi-type").value,
+      material: document.getElementById("pi-material").value,
+      label: document.getElementById("pi-label").value,
+      basePriceKzt: Number(document.getElementById("pi-base").value),
+      unitPriceKzt: Number(document.getElementById("pi-unit").value),
+      unit: document.getElementById("pi-unit-type").value
+    }});
+    if (!ok) return showStatus(data.message || "Ошибка добавления позиции", "bad");
+    showStatus(`Позиция добавлена`, "ok");
+    window._closeModal();
+    window._loadPriceItems(plId);
+  };
+};
+
+/* ── Estimate Generation ── */
+
+window._generateEstimate = async (plId) => {
+  const modal = document.getElementById("modal-body");
+  modal.innerHTML = `
+    <h2>Сгенерировать estimate из прайс-листа #${plId}</h2>
+    <label>Draft ID<input type="number" id="est-draft-id" placeholder="ID PDF draft" min="1" /></label>
+    <label>Материал<input type="text" id="est-material" placeholder="ЛДСП 18мм" /></label>
+    <label>Скидка (%)<input type="number" id="est-discount" placeholder="0" min="0" max="100" value="0" /></label>
+    <div class="row" style="margin-top:16px">
+      <button id="btn-do-estimate">Сгенерировать</button>
+      <button class="secondary" onclick="window._closeModal()">Отмена</button>
+    </div>`;
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("btn-do-estimate").onclick = async () => {
+    const draftId = document.getElementById("est-draft-id").value;
+    const material = document.getElementById("est-material").value;
+    const discount = Number(document.getElementById("est-discount").value) || 0;
+    const { ok, data } = await api(`/suppliers/${state.selectedSupplierId}/price-lists`, { method: "POST", body: {
+      action: "supplier_estimate",
+      draftId: Number(draftId),
+      supplierId: state.selectedSupplierId,
+      material,
+      discountPercent: discount
+    }});
+    if (!ok) return showStatus(data.message || "Ошибка генерации estimate", "bad");
+    const modal2 = document.getElementById("modal-body");
+    modal2.innerHTML = `<h2>Estimate #${data.estimateId} создан</h2>
+      <pre style="white-space:pre-wrap;font-size:12px;max-height:400px;overflow:auto;background:#f4f6f9;padding:12px;border-radius:8px">${esc(JSON.stringify(data.estimate || data, null, 2))}</pre>
+      <div class="row" style="margin-top:16px"><button class="secondary" onclick="window._closeModal()">Закрыть</button></div>`;
+  };
+};
+
+/* ── Launch Panel ── */
+
+async function loadLaunchPanel() {
+  const el = document.getElementById("launch-content");
+  let html = `<div class="card"><h2>Production Readiness</h2>`;
+  html += `<div class="grid">
+    <div class="stat"><div class="k">Status</div><div class="v">Phase 4.3</div></div>
+    <div class="stat"><div class="k">MVP</div><div class="v">packages/mvp</div></div>
+    <div class="stat"><div class="k">Database</div><div class="v">D1 (1 binding)</div></div>
+    <div class="stat"><div class="k">Orchestrator</div><div class="v">Absent</div></div>
+  </div>`;
+
+  html += `<h3>Active Packages</h3><table><thead><tr><th>Code</th><th>Name</th><th>Price</th><th>Credit</th><th>Status</th></tr></thead><tbody>`;
+  const { ok: pkgOk, data: pkgData } = await api("/packages");
+  if (pkgOk) {
+    for (const p of (pkgData.items || [])) {
+      html += `<tr><td><code>${esc(p.code)}</code></td><td>${esc(p.name)}</td><td>${fmtMoney(p.priceKzt)}</td><td>${p.creditedOnOrder ? "Yes" : "No"}</td><td>${showBadge(p.code === "package_c" ? "deferred" : "active")}</td></tr>`;
+    }
+  }
+  html += `</tbody></table>`;
+
+  html += `<h3>WhatsApp Webhook</h3><div class="grid"><div class="stat"><div class="k">Status</div><div class="v">Disabled</div></div></div>`;
+  html += `<h3>Migrations</h3><div class="sub">8 migrations applied (0001–0008). 22 tables, 53 indexes.</div>`;
+  html += `<h3>Rehearsal</h3><div class="sub">Run <code>npm run smoke:phase43</code> to execute 5 operational rehearsals.</div>`;
+  html += `<h3>Deployment</h3><div class="sub">See <code>docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md</code></div>`;
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+/* ── Wire up view-specific loaders ── */
+
+const originalSwitchView = switchView;
+switchView = function(viewName) {
+  originalSwitchView(viewName);
+  if (viewName === "launch") loadLaunchPanel();
+  if (viewName === "clients") loadClients();
+  if (viewName === "orders") loadOrders();
+};
 
 switchView("packages");

@@ -5,6 +5,11 @@ export const PACKAGE_CODES = Object.freeze({
   PACKAGE_C: "package_c"
 });
 
+export const PACKAGE_READINESS = Object.freeze({
+  ACTIVE: "active",
+  DRAFT: "draft"
+});
+
 export const ENGAGEMENT_LEVELS = Object.freeze({
   ROUGH_QUOTE: "rough_quote",
   PACKAGE_A: "package_a",
@@ -57,6 +62,8 @@ const CATALOG_SEED = Object.freeze([
     name: "Быстрый ориентир",
     priceKzt: 0,
     creditedOnOrder: false,
+    readiness: PACKAGE_READINESS.ACTIVE,
+    isSellable: true,
     deliverables: ["rough_price_per_meter", "no_estimate", "no_visual"],
     engagementLevel: ENGAGEMENT_LEVELS.ROUGH_QUOTE,
     visualState: VISUAL_STATE.NONE,
@@ -69,6 +76,8 @@ const CATALOG_SEED = Object.freeze([
     name: "Package A — 10 000 тг",
     priceKzt: 10000,
     creditedOnOrder: true,
+    readiness: PACKAGE_READINESS.ACTIVE,
+    isSellable: true,
     deliverables: ["commercial_proposal", "line_item_estimate", "bw_preview_visual"],
     engagementLevel: ENGAGEMENT_LEVELS.PACKAGE_A,
     visualState: VISUAL_STATE.BW_PREVIEW,
@@ -81,6 +90,8 @@ const CATALOG_SEED = Object.freeze([
     name: "Package B — 20 000 тг",
     priceKzt: 20000,
     creditedOnOrder: true,
+    readiness: PACKAGE_READINESS.ACTIVE,
+    isSellable: true,
     deliverables: [
       "color_multi_view_visual",
       "commercial_proposal",
@@ -102,6 +113,8 @@ const CATALOG_SEED = Object.freeze([
     priceKzt: 0,
     priceConfigurable: true,
     creditedOnOrder: true,
+    readiness: PACKAGE_READINESS.DRAFT,
+    isSellable: false,
     deliverables: [
       "color_multi_view_visual",
       "commercial_proposal",
@@ -109,9 +122,10 @@ const CATALOG_SEED = Object.freeze([
       "material_spec",
       "skp_model",
       "obj_model",
-      "glb_model",
-      "viewer_link"
+      "glb_model"
     ],
+    plannedDeliverables: ["viewer_link"],
+    readinessNote: "Package C is not sellable until Phase 4.6d GLB viewer and deployment boundary are complete.",
     engagementLevel: ENGAGEMENT_LEVELS.PACKAGE_C,
     visualState: VISUAL_STATE.COLOR_MULTI_VIEW,
     proposalDepth: PROPOSAL_DEPTH.DETAILED,
@@ -198,6 +212,8 @@ export function buildEngagementDefaults(packageCode) {
 function cloneDefinition(definition) {
   return {
     ...definition,
-    deliverables: [...definition.deliverables]
+    deliverables: [...definition.deliverables],
+    plannedDeliverables: definition.plannedDeliverables ? [...definition.plannedDeliverables] : undefined,
+    required3dFormats: definition.required3dFormats ? [...definition.required3dFormats] : undefined
   };
 }

@@ -3,6 +3,7 @@ import {
   VISUAL_STATE,
   UPGRADE_OFFER_STATE,
   buildEngagementDefaults,
+  getPackageDefinition,
   isValidEngagementStatus,
   isValidPackageCode,
   isValidSourceMaterialType,
@@ -71,6 +72,17 @@ export async function createEngagement({ db, orderId, packageCode, sourceMateria
   if (!isValidPackageCode(packageCode)) {
     return errorResult(400, "invalid_package_code", "packageCode must be a known package code.");
   }
+
+  const packageDefinition = getPackageDefinition(packageCode);
+  if (!packageDefinition) return errorResult(400, "invalid_package_code", "Package definition is missing.");
+  if (packageDefinition.isSellable === false) {
+    return errorResult(
+      409,
+      "package_not_sellable",
+      packageDefinition.readinessNote || "This package is not sellable in the current production boundary."
+    );
+  }
+
   const material = isValidSourceMaterialType(sourceMaterialType) ? sourceMaterialType : "manual";
 
   const order = await db.prepare("SELECT id, engagement_level AS engagementLevel FROM orders WHERE id = ?").bind(id).first();
@@ -125,11 +137,24 @@ export async function transitionEngagement({ db, engagementId, toStatus, visualS
       `Engagement cannot transition from "${current.status}" to "${toStatus}".`);
   }
 
+  if (toStatus === ENGAGEMENT_STATUS.PAID) {
+    const paymentGate = await checkConfirmedPaymentGate(db, current);
+    if (!paymentGate.ok) return paymentGate;
+  }
+
+  if (toStatus === ENGAGEMENT_STATUS.DELIVERED) {
+    const deliverableGate = await checkDeliverableHandoffGate(db, id);
+    if (!deliverableGate.ok) return deliverableGate;
+  }
+
   const updates = [`status = ?`, `updated_at = CURRENT_TIMESTAMP`];
   const values = [toStatus];
   const timestampColumn = statusTimestampColumn(toStatus);
   if (timestampColumn) {
     updates.push(`${timestampColumn} = CURRENT_TIMESTAMP`);
+  }
+  if (toStatus === ENGAGEMENT_STATUS.CREDITED) {
+    updates.push(`credited_amount_kzt = CASE WHEN credited_on_order = 1 THEN price_kzt ELSE 0 END`);
   }
   if (isValidVisualState(visualState) && visualState !== current.visualState) {
     updates.push(`visual_state = ?`);
@@ -196,6 +221,43 @@ function statusTimestampColumn(status) {
   }
 }
 
+async function checkConfirmedPaymentGate(db, engagement) {
+  const payment = await db.prepare(
+    `SELECT id, amount_kzt AS amountKzt
+     FROM package_payments
+     WHERE engagement_id = ? AND status = 'confirmed' AND amount_kzt = ?
+     ORDER BY confirmed_at DESC, id DESC
+     LIMIT 1`
+  ).bind(engagement.id, engagement.priceKzt).first();
+
+  if (!payment) {
+    return errorResult(
+      409,
+      "payment_confirmation_required",
+      "Engagement can transition to paid only after a confirmed payment matching the engagement price."
+    );
+  }
+  return okResult({ paymentId: payment.id });
+}
+
+async function checkDeliverableHandoffGate(db, engagementId) {
+  const result = await db.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered
+     FROM package_deliverables
+     WHERE engagement_id = ?`
+  ).bind(engagementId).first();
+  const total = Number(result?.total) || 0;
+  const delivered = Number(result?.delivered) || 0;
+  if (total === 0) {
+    return errorResult(409, "deliverables_not_seeded", "Client handoff requires package deliverables to be seeded first.");
+  }
+  if (delivered !== total) {
+    return errorResult(409, "deliverables_not_approved", "Client handoff requires every deliverable to be reviewed and delivered by a manager.");
+  }
+  return okResult({ total, delivered });
+}
+
 async function findEngagement(db, id) {
   return db.prepare(
     `SELECT id, order_id AS orderId, package_code AS packageCode, engagement_level AS engagementLevel,
@@ -220,9 +282,9 @@ async function recordConversionEvent(db, { orderId, engagementId, fromLevel, toL
 
 function storageFailure(error) {
   if (/unique|constraint/i.test(String(error?.message || error))) {
-    return errorResult(409, "engagement_conflict", "Engagement could not be saved because of a constraint conflict.");
+    return errorResult(409, "engagement_conflict", "Package engagement could not be saved.");
   }
-  return errorResult(500, "engagement_storage_failed", "Package engagement could not be stored.");
+  return errorResult(500, "engagement_storage_failed", "Package engagement could not be saved.");
 }
 
 function positiveInteger(value) {

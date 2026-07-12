@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { PACKAGE_CODES } from "../src/packages/package-catalog.js";
 import {
   classifyIntent,
   suggestClarifyingQuestions,
   getAdvisorSummary
 } from "../src/ai/package-advisor.js";
+import { createEngagement } from "../src/packages/package-store.js";
 
 let passed = 0;
 let failed = 0;
@@ -100,52 +103,101 @@ console.log("\nPackage advisor — confidence scoring");
   assert(c3.confidence >= 0, "weak signal -> low confidence");
 }
 
-console.log("\nPackage advisor — Package C candidate detection");
+console.log("\nPackage advisor — Package C detection");
 
 {
   const p1 = classifyIntent("нужна 3d модель в формате sketchup");
-  assertEqual(p1.packageCode, "package_c_candidate", "sketchup -> package_c_candidate");
+  assertEqual(p1.packageCode, PACKAGE_CODES.PACKAGE_C, "sketchup -> PACKAGE_C");
   assert(p1.matchedKeywords.includes("sketchup"), "matched sketchup keyword");
 
   const p2 = classifyIntent("скиньте мне obj файлы для дизайнера");
-  assertEqual(p2.packageCode, "package_c_candidate", "obj + designer -> package_c_candidate");
+  assertEqual(p2.packageCode, PACKAGE_CODES.PACKAGE_C, "obj + designer -> PACKAGE_C");
 
   const p3 = classifyIntent("хочу glb модель кухни");
-  assertEqual(p3.packageCode, "package_c_candidate", "glb -> package_c_candidate");
+  assertEqual(p3.packageCode, PACKAGE_CODES.PACKAGE_C, "glb -> PACKAGE_C");
 
   const p4 = classifyIntent("нужен 3d-файл для подрядчика");
-  assertEqual(p4.packageCode, "package_c_candidate", "3d-файл -> package_c_candidate");
+  assertEqual(p4.packageCode, PACKAGE_CODES.PACKAGE_C, "3d-файл -> PACKAGE_C");
 
   const p5 = classifyIntent("fbx модель мебели");
-  assertEqual(p5.packageCode, "package_c_candidate", "fbx -> package_c_candidate");
-
-  const q1 = suggestClarifyingQuestions(
-    { packageCode: "package_c_candidate", confidence: 0.9 },
-    {}
-  );
-  assert(q1.length >= 1, "Package C without format gets format question");
-  assertEqual(q1[0].field, "format", "first question is about format");
-
-  const q2 = suggestClarifyingQuestions(
-    { packageCode: "package_c_candidate", confidence: 0.9 },
-    { has3dFiles: true }
-  );
-  assert(q2.length === 1, "Package C with has3dFiles gets only target_user question");
-  assertEqual(q2[0].field, "target_user", "remaining question is about target_user");
-
-  const q3 = suggestClarifyingQuestions(
-    { packageCode: "package_c_candidate", confidence: 0.9 },
-    { has3dFiles: true, targetUser: "designer" }
-  );
-  assertEqual(q3.length, 0, "Package C with has3dFiles+targetUser gets no questions");
+  assertEqual(p5.packageCode, PACKAGE_CODES.PACKAGE_C, "fbx -> PACKAGE_C");
 
   const s1 = getAdvisorSummary({
-    packageCode: "package_c_candidate",
+    packageCode: PACKAGE_CODES.PACKAGE_C,
     confidence: 0.85,
     reason: "strong_match",
     matchedKeywords: ["sketchup", "3d файл"]
   });
-  assert(s1.recommended.includes("package_c_candidate"), "summary contains package_c_candidate");
+  assert(s1.recommended.includes("Package C"), "summary contains Package C label");
+  assert(s1.recommended.includes("draft"), "summary mentions draft status");
+}
+
+console.log("\nPackage advisor — Package C follow-up questions");
+
+{
+  const q1 = suggestClarifyingQuestions(
+    { packageCode: PACKAGE_CODES.PACKAGE_C, confidence: 0.9 },
+    {}
+  );
+  assertEqual(q1.length, 1, "Package C without context gets readiness question");
+  assertEqual(q1[0].field, "readiness", "question is about draft/readiness status");
+
+  const q2 = suggestClarifyingQuestions(
+    { packageCode: PACKAGE_CODES.PACKAGE_C, confidence: 0.9 },
+    { has3dFiles: true }
+  );
+  assertEqual(q2.length, 1, "Package C with has3dFiles still gets readiness question");
+
+  const q3 = suggestClarifyingQuestions(
+    { packageCode: PACKAGE_CODES.PACKAGE_C, confidence: 0.9 },
+    { has3dFiles: true, targetUser: "designer" }
+  );
+  assertEqual(q3.length, 1, "Package C with full context still gets readiness question");
+}
+
+console.log("\nPackage advisor — Package C engagement blocked");
+
+{
+  const sqlite = new DatabaseSync(":memory:");
+  const migrations = [
+    readFileSync(new URL("../migrations/0001_packages.sql", import.meta.url), "utf8"),
+    readFileSync(new URL("../migrations/0002_package_payments.sql", import.meta.url), "utf8"),
+    readFileSync(new URL("../migrations/0003_deliverables.sql", import.meta.url), "utf8")
+  ].join("\n");
+  sqlite.exec(migrations);
+
+  const db = {
+    prepare(sql) {
+      const stmt = sqlite.prepare(sql);
+      const ctx = { binds: [] };
+      const proxy = {
+        bind(...values) { ctx.binds = values; return proxy; },
+        async first() { return stmt.get(...ctx.binds) || null; },
+        async all() { return { results: stmt.all(...ctx.binds) }; },
+        async run() {
+          const r = stmt.run(...ctx.binds);
+          return { meta: { changes: r.changes, last_row_id: r.lastInsertRowid } };
+        }
+      };
+      return proxy;
+    },
+    async batch(statements) {
+      const results = [];
+      for (const s of statements) results.push(await s.run());
+      return results;
+    }
+  };
+
+  const clientInsert = await db.prepare("INSERT INTO clients (name, phone) VALUES (?, ?)").bind("Test", "+7 700 000 00 01").run();
+  const orderInsert = await db.prepare("INSERT INTO orders (client_id, status, engagement_level) VALUES (?, 'new', 'rough_quote')").bind(clientInsert.meta.last_row_id).run();
+  const orderId = orderInsert.meta.last_row_id;
+
+  const result = await createEngagement({ db, orderId, packageCode: PACKAGE_CODES.PACKAGE_C, sourceMaterialType: "manual" });
+  assert(!result.ok, "createEngagement for Package C returns error");
+  assertEqual(result.status, 409, "returns 409");
+  assertEqual(result.body.error, "package_not_sellable", "error code is package_not_sellable");
+
+  sqlite.close();
 }
 
 console.log("\nPackage advisor — suggestClarifyingQuestions");
