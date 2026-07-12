@@ -1,6 +1,6 @@
-import { authorizeRequest } from "../../src/auth.js";
-import { getOrder } from "../../src/orders/order-store.js";
-import { listOrderEngagements } from "../../src/packages/package-store.js";
+import { authorizeRequest } from "../../../src/auth.js";
+import { getOrder } from "../../../src/orders/order-store.js";
+import { listOrderEngagements } from "../../../src/packages/package-store.js";
 
 export async function onRequestGet(context) {
   const auth = authorizeRequest(context.request, context.env, "read");

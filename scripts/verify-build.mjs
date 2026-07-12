@@ -12,6 +12,7 @@ const ROOT = process.cwd();
 const DIST = join(ROOT, ".wrangler", "dist");
 
 const requiredPaths = [
+  ["Pages Functions worker bundle", "public", "_worker.js"],
   ["MVP auth source", "src", "auth.js"],
   ["MVP package route", "functions", "api", "packages.js"],
   ["MVP admin UI", "public", "admin.html"],
