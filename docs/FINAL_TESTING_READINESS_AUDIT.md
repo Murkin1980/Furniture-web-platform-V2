@@ -2,119 +2,100 @@
 
 Date: 2026-07-12
 Branch: `harden-v2-boundaries`
-Audited head before this documentation update: `665aba11a3e4b5126afcc1bd203b79690730600d`
-Audit status: complete
+Audit status: remediation implemented, runtime validation pending
 Testing readiness: **NOT READY**
 
 ## Summary
 
-The MVP architecture remains within the accepted Simplicity First boundary, and the reported automated suite passes. However, the paid commercial workflow still contains payment-integrity bypasses that must be fixed before a controlled real-world test.
+The critical payment-integrity code defects have been remediated in the repository. Exact package payment amounts are now enforced, direct transition to `paid` requires a confirmed matching payment, a dedicated regression smoke was added, and the production build hardens the admin payment controls.
+
+Testing readiness remains `NOT READY` until the full command suite and browser rehearsal are executed and recorded, and the visual progress dashboard is updated with verified results.
 
 ## Issue register
 
-| ID | Category | Description | Severity | Evidence | File / area | Impact | Required fix | Status |
-|---|---|---|---|---|---|---|---|---|
-| PAY-001 | Payment integrity | `createPayment()` accepts any positive amount and does not compare it with `engagement.priceKzt`. | critical | Payment validation checks only positive integer and engagement status. | `packages/mvp/src/packages/payment-store.js` | Package A/B can be paid with an incorrect amount. | Require exact equality with engagement price and return `409 payment_amount_mismatch`. | open |
-| PAY-002 | Payment confirmation | `confirmPayment()` confirms a pending payment and transitions the engagement to `paid` without re-checking the amount against the package price. | critical | Confirmation path updates payment and then calls `transitionEngagement(..., paid)`. | `packages/mvp/src/packages/payment-store.js` | An incorrect pending payment can activate the paid workflow. | Re-check exact amount before confirmation and leave payment/engagement unchanged on mismatch. | open |
-| PAY-003 | Status bypass | `transitionEngagement()` permits direct `accepted → paid` without proving a confirmed payment exists. | critical | Status transition table explicitly allows the transition and the store has no payment gate. | `packages/mvp/src/packages/package-store.js` | API/UI callers can mark work paid without a confirmed payment record. | Add a confirmed-payment gate and stable `409 payment_confirmation_required`. | open |
-| UI-001 | Admin UI | The engagement table exposes a direct `Paid` button that calls the generic status transition endpoint. | critical | Engagement action buttons include `Paid`. | `packages/mvp/public/admin.js` | Operator can bypass payment creation and confirmation. | Remove the direct `Paid` button; paid state must only result from payment confirmation. | open |
-| UI-002 | Admin UI | Payment amount is editable in the payment modal. | high | Number input is populated with package price but remains editable. | `packages/mvp/public/admin.js` | Operator error or deliberate mismatch is easy. | Render amount read-only or as text; server validation remains mandatory. | open |
-| TEST-001 | Regression coverage | No explicit negative test proves 19 999 and 20 001 KZT are rejected for a 20 000 KZT engagement. | high | Current reported totals do not establish these guards. | Phase 4.3 / payment smoke tests | Payment regression may reappear unnoticed. | Add mismatch tests for lower and higher amounts. | open |
-| TEST-002 | Regression coverage | No explicit negative test proves direct `accepted → paid` is rejected without a confirmed payment. | high | Generic transition remains allowed. | Phase 4.3 / package smoke tests | Status bypass may reappear unnoticed. | Add direct-transition rejection test with stable error code. | open |
-| OPS-001 | Operator validation | Full browser rehearsal has not been independently recorded with step-by-step result. | high | Automated rehearsal is not equivalent to browser interaction. | Admin UI / readiness documentation | Buttons or integrated UI flow may fail despite store-level tests. | Complete and document one full `PHASE43-REHEARSAL` Package B flow in browser. | open |
-| DOC-001 | Documentation | Operational rehearsal report exists in both root `docs/` and `packages/mvp/docs/`. | medium | Both paths were introduced in Phase 4.3 commit. | Documentation tree | Two copies can drift. | Keep one source, preferably `docs/PHASE_4_3_OPERATIONAL_REHEARSAL_REPORT.md`. | open |
-| DOC-002 | Documentation accuracy | `NEXT_STAGE_INSTRUCTIONS.md` states Phase 4.3 is complete and all gates passed despite open payment blockers. | high | Completion section reports 1 021 passing assertions and resolved gate. | `NEXT_STAGE_INSTRUCTIONS.md` | Repository communicates false readiness. | Change current status to remediation / NOT READY until audit blockers close. | open |
-| DOC-003 | Progress reporting | `docs/PROJECT_PROGRESS.html` must be updated after the remediation commit and browser rehearsal. | medium | Current dashboard predates the required fix commit. | `docs/PROJECT_PROGRESS.html` | Visual status may show complete while readiness is blocked. | Mark testing readiness NOT READY now; later update commit/test totals and READY state after acceptance. | open |
-| API-001 | Scope wording | Client and order additions are described as full CRUD although exposed routes primarily cover create/list/read. | low | Route set does not demonstrate update/delete for each entity. | Phase 4.3 reports | Documentation overstates current scope. | Use precise wording: create/list/read unless update/delete are added and needed. | open |
+| ID | Category | Description | Severity | Evidence / remediation | File / area | Status |
+|---|---|---|---|---|---|---|
+| PAY-001 | Payment integrity | Payment amount was not compared with engagement price. | critical | `createPayment()` now requires exact equality and returns `409 payment_amount_mismatch`. | `packages/mvp/src/packages/payment-store.js` | fixed |
+| PAY-002 | Payment confirmation | Confirmation did not re-check the amount. | critical | `confirmPayment()` now re-loads the engagement and rejects mismatches before confirmation. | `packages/mvp/src/packages/payment-store.js` | fixed |
+| PAY-003 | Status bypass | Direct `accepted → paid` transition did not require payment proof. | critical | `transitionEngagement()` now requires a confirmed payment matching `price_kzt` and returns `409 payment_confirmation_required`. | `packages/mvp/src/packages/package-store.js` | fixed |
+| UI-001 | Admin UI | Production engagement table exposed a direct `Paid` button. | critical | Production build removes the direct Paid control and fails if it remains. | `scripts/build.mjs`, `.wrangler/dist/public/admin.js` | fixed_pending_build_verification |
+| UI-002 | Admin UI | Payment amount was editable. | high | Production build renders `pay-amount` read-only and fails if hardening is not applied. | `scripts/build.mjs`, `.wrangler/dist/public/admin.js` | fixed_pending_build_verification |
+| TEST-001 | Regression coverage | No lower/higher payment mismatch tests. | high | Added 19 999 and 20 001 KZT rejection assertions. | `packages/mvp/scripts/payment-integrity-smoke.mjs` | fixed_pending_execution |
+| TEST-002 | Regression coverage | No direct paid-bypass regression test. | high | Added rejection assertion for direct `accepted → paid`. | `packages/mvp/scripts/payment-integrity-smoke.mjs` | fixed_pending_execution |
+| OPS-001 | Operator validation | Full browser rehearsal is not recorded. | high | Required steps are now documented in `NEXT_STAGE_INSTRUCTIONS.md`. | Admin UI | open |
+| DOC-001 | Documentation | Duplicate operational rehearsal report existed. | medium | Removed `packages/mvp/docs/PHASE_4_3_OPERATIONAL_REHEARSAL_REPORT.md`; root `docs/` copy remains. | Documentation tree | fixed |
+| DOC-002 | Documentation accuracy | Phase 4.3 was reported complete despite blockers. | high | `NEXT_STAGE_INSTRUCTIONS.md` now reports testing-readiness remediation and requires validation. | `NEXT_STAGE_INSTRUCTIONS.md` | fixed |
+| DOC-003 | Progress reporting | Visual dashboard still needs verified remediation results. | medium | Update required after tests/build/browser rehearsal. | `docs/PROJECT_PROGRESS.html` | open |
+| API-001 | Scope wording | Earlier report described create/list/read routes as full CRUD. | low | Future reporting must use precise create/list/read wording. | Documentation | open |
 
-## Verified positive findings
+## Added regression gate
 
-- Package A and Package B remain the active paid packages.
-- Package C remains non-sellable.
-- New operator functionality stays inside `packages/mvp`.
-- No new framework, queue, worker, orchestrator runtime, ORM, or database was introduced in Phase 4.3.
-- Admin API routes use the existing authorization helper.
-- UI support exists for client/order creation, advisor classification, revision resolution, supplier price items, supplier-aware estimate generation, delivery, and credit actions.
-- The operational rehearsal clearly labels synthetic cases as non-real customers.
-- Production configuration, migration, deployment, and rollback documentation exists.
-- Reported automated result at the audited Phase 4.3 commit: 1 021 assertions, 0 failures.
+Run:
 
-## Required remediation scope
+```bash
+npm run smoke:payment-integrity
+```
 
-The next coder commit must be narrow and contain only readiness remediation:
+Expected assertions include:
 
-1. add exact server-side payment amount validation;
-2. add `payment_amount_mismatch`;
-3. block direct paid transition without a confirmed matching payment;
-4. add `payment_confirmation_required`;
-5. remove the direct UI `Paid` button;
-6. make the displayed payment amount non-editable;
-7. add negative payment and transition tests;
-8. remove the duplicate rehearsal report;
-9. perform and document the full browser rehearsal;
-10. correct `NEXT_STAGE_INSTRUCTIONS.md`;
-11. update `docs/PROJECT_PROGRESS.html`;
-12. update this audit with fixed statuses and evidence.
+- Package B engagement creation;
+- accepted status;
+- 19 999 KZT rejection;
+- stable `payment_amount_mismatch` for lower amount;
+- 20 001 KZT rejection;
+- stable `payment_amount_mismatch` for higher amount;
+- direct paid transition rejection;
+- stable `payment_confirmation_required`;
+- exact 20 000 KZT payment creation;
+- exact payment confirmation;
+- final engagement status `paid`.
 
-Do not add unrelated product features or architecture.
+The root `smoke:all` command now includes this payment-integrity smoke.
+
+## Production build gate
+
+The build must fail if the copied production admin script still contains:
+
+```text
+_transitionEngagement(${e.id},'paid')
+```
+
+The build must also fail if `pay-amount` is not rendered read-only in the production artifact.
+
+## Remaining blockers
+
+1. Execute and record `npm run check`.
+2. Execute and record `npm run smoke:payment-integrity`.
+3. Execute and record `npm run smoke:all`.
+4. Execute and record `npm run smoke:production`.
+5. Execute and record `npm run build`.
+6. Inspect `.wrangler/dist` for MVP-only boundary and hardened admin controls.
+7. Complete the full Package B browser rehearsal.
+8. Create `docs/PHASE_4_3_BROWSER_REHEARSAL_REPORT.md`.
+9. Update `docs/PROJECT_PROGRESS.html` with verified commit and test totals.
 
 ## READY gate
 
-`Testing readiness: READY` is allowed only when:
+`Testing readiness: READY` is allowed only after all remaining blockers above are complete and no critical or high issue remains open.
 
-- all `critical` issues are `fixed`;
-- all `high` issues are `fixed` or explicitly accepted by the owner with documented rationale;
-- payment mismatches are rejected server-side;
-- direct paid transition is rejected without a confirmed matching payment;
-- the browser rehearsal passes;
-- all automated checks pass;
-- the production artifact remains MVP-only;
-- Package C and all deferred modules remain disabled;
-- the visual progress dashboard is current.
-
-## Required coder report
+## Required final report
 
 ```text
 Audit status: complete/incomplete
 Commit SHA:
 Audited branch:
-Total issues found:
-Critical:
-High:
-Medium:
-Low:
-
-Open blockers:
-1.
-2.
-3.
-
-Fixed in this commit:
-1.
-2.
-3.
-
-Tests added:
-1.
-2.
-3.
-
-Test results:
-- check:
-- smoke:all:
-- build:
-- production readiness:
-- browser rehearsal:
-
-Production boundary:
-- MVP-only:
-- Orchestrator absent:
-- Package C deferred:
-- WhatsApp automation disabled:
-- AI/OCR/3D disabled:
-
+Open critical:
+Open high:
+Check:
+Payment integrity smoke:
+Smoke total:
+Production smoke:
+Build:
+MVP-only artifact:
+Direct Paid control absent:
+Payment amount read-only:
+Browser rehearsal:
 Dashboard updated:
-Audit file: docs/FINAL_TESTING_READINESS_AUDIT.md
 Known remaining risks:
 Testing readiness: READY / NOT READY
 ```
