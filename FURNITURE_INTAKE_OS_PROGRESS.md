@@ -191,7 +191,7 @@
 
 **Активный этап:** Этап 1 — полный путь заявки Salamat Mebel.  
 **Текущий подэтап:** 1.1 и 1.2 — вход клиента и сбор данных.
-**Текущий статус:** основной живой сайт `https://www.salamat-mebel.kz/` переключён с Plesk-статики на Cloudflare Worker `salamat-mebel-kz` через route `www.salamat-mebel.kz/*`. Домен `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`. Основной сайт теперь отдаёт Liquid Glass/Workers-версию с `script.js?v=20260713-5`, а `script.js` содержит `POST https://furniture-orders-mvp.pages.dev/api/orders`: быстрый телефонный блок, основная форма, чат-помощник, плавающая WhatsApp-кнопка, нижняя мобильная WhatsApp-кнопка и видимые WhatsApp-контакты сначала открывают/используют форму заявки и сохраняют структурированный лид в intake API, и только после успешной записи открывают WhatsApp как ручной канал уточнения. Быстрая кнопка под телефоном теперь визуально выделена, содержит FontAwesome-иконку и hover/transition; плавающая форма визуально проверена на мобильном viewport. Если сохранение не удалось, WhatsApp не открывается, а клиент видит ошибку.
+**Текущий статус:** основной живой сайт `https://www.salamat-mebel.kz/` переключён с Plesk-статики на Cloudflare Worker `salamat-mebel-kz` через route `www.salamat-mebel.kz/*`. Домен `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`. Основной сайт теперь отдаёт Liquid Glass/Workers-версию с `script.js?v=20260713-5`, а `script.js` содержит `POST https://furniture-orders-mvp.pages.dev/api/orders`: быстрый телефонный блок, основная форма, чат-помощник, плавающая WhatsApp-кнопка, нижняя мобильная WhatsApp-кнопка и видимые WhatsApp-контакты сначала открывают/используют форму заявки и сохраняют структурированный лид в intake API, и только после успешной записи открывают WhatsApp как ручной канал уточнения. Быстрая кнопка под телефоном теперь визуально выделена, содержит FontAwesome-иконку и hover/transition; на мобильной форме скрыты лишние overlay CTA, поэтому у основной кнопки заявки больше нет наложений. Если сохранение не удалось, WhatsApp не открывается, а клиент видит ошибку.
 
 ### Следующие три действия
 
@@ -301,6 +301,15 @@
 - **Решение/вывод:** кнопка быстрого расчёта теперь заметна визуально и остаётся в intake-first логике.
 - **Изменённые файлы:** `C:\tmp\salamat-mebel-kz\index.html`, `C:\tmp\salamat-mebel-kz\script.js`, `C:\tmp\salamat-mebel-kz\styles.css`, `FURNITURE_INTAKE_OS_PROGRESS.md`, `SIMPLICITY_REVIEW.md`.
 - **Следующий единственный шаг:** создать одну тестовую заявку с телефона через быстрый расчёт или плавающую кнопку на `https://www.salamat-mebel.kz/` и проверить новую строку в `furniture-orders-mvp`.
+
+### 2026-07-13 — Убрать наложение мобильных CTA на форме
+- **Цель:** исправить мобильный экран, где одновременно были видны основная кнопка формы, нижняя sticky-кнопка и плавающая зелёная кнопка.
+- **Сделано:** на мобильной ширине отдельная `.float-whatsapp` скрыта полностью; при активной секции `#contact` скрываются `.mobile-sticky-cta` и чат-кнопка через `opacity`, `visibility: hidden` и `pointer-events: none`.
+- **Проверено:** `node --check script.js`; commits `19171a3 Fix mobile CTA overlap` и `86eb869 Hide mobile CTA overlays in contact form` отправлены в GitHub; Worker `salamat-mebel-kz` развернут на route `www.salamat-mebel.kz/*`, version `ca4d9f38-0377-44ba-bd34-affa20d21e86`; live CSS содержит правила скрытия overlay CTA; мобильная проверка `390px` показала `floatDisplay: none`, `stickyOpacity: 0`, `stickyPointer: none`.
+- **Не получилось:** реальную заявку с телефона не создавал, чтобы не подменять следующий end-to-end тест.
+- **Решение/вывод:** в секции формы на мобильном остаётся один основной CTA `Отправить заявку в WhatsApp`; лишние зелёные overlay-кнопки больше не накладываются.
+- **Изменённые файлы:** `C:\tmp\salamat-mebel-kz\styles.css`, `FURNITURE_INTAKE_OS_PROGRESS.md`, `SIMPLICITY_REVIEW.md`.
+- **Следующий единственный шаг:** создать одну тестовую заявку с телефона через форму на `https://www.salamat-mebel.kz/` и проверить новую строку в `furniture-orders-mvp`.
 
 ---
 

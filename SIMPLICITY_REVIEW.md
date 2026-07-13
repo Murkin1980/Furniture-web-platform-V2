@@ -363,6 +363,8 @@ Complexity may be added ONLY when ALL of the following are true:
 
 **2026-07-13 follow-up 3:** added FontAwesome icons and hover/transition states to make the active intake CTAs visible and interactive. Chose FontAwesome CDN instead of Lucide React because the Salamat landing is static HTML/CSS/JS and adding React would create unnecessary build complexity. No new backend, database, queue, or data path was added.
 
+**2026-07-13 follow-up 4:** removed mobile CTA overlap in the contact form by hiding redundant floating/sticky actions while the main form is active. This keeps one clear submission action on the phone screen and does not change the intake data path.
+
 **Examples of justified complexity additions (after Phase 4.1):**
 - If visual preparation is the bottleneck → activate controlled 3D for Package B
 - If communication handling is the bottleneck → activate manager-approved WhatsApp workflow
