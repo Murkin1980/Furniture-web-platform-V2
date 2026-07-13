@@ -357,6 +357,8 @@ Complexity may be added ONLY when ALL of the following are true:
 
 **Stop boundary:** no new parked features are activated by this route change. The next single proof remains one real phone test that creates a saved order in `furniture-orders-mvp`.
 
+**2026-07-13 follow-up:** deployed the same Worker route with `script.js?v=20260713-2` so the landing saves to `furniture-orders-mvp` before opening WhatsApp. This is a sequencing fix inside the existing landing, not a new service or automation layer. `workers.dev` preview is disabled by the Wrangler deploy defaults; the canonical production route remains `https://www.salamat-mebel.kz/`.
+
 **Examples of justified complexity additions (after Phase 4.1):**
 - If visual preparation is the bottleneck → activate controlled 3D for Package B
 - If communication handling is the bottleneck → activate manager-approved WhatsApp workflow
