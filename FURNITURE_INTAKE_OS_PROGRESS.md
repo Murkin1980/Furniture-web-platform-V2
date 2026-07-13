@@ -191,17 +191,17 @@
 
 **Активный этап:** Этап 1 — полный путь заявки Salamat Mebel.  
 **Текущий подэтап:** 1.1 и 1.2 — вход клиента и сбор данных.
-**Текущий статус:** основной живой сайт определён: `https://www.salamat-mebel.kz/`. Домен `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`. Фактический live-сайт сейчас отдаётся через Cloudflare → Plesk (`X-Powered-By: PleskLin`), а репозиторий `Murkin1980/salamat-mebel-kz` настроен на GitHub Pages с `CNAME=salamat-mebel.kz`, source `main:/`. В репозитории Salamat Mebel главный CTA/формы связаны с существующим `POST https://furniture-orders-mvp.pages.dev/api/orders`: быстрый телефонный блок, основная форма и чат-помощник теперь отправляют структурированную заявку в intake API и сохраняют WhatsApp как ручной канал уточнения. Перед реальным тестом нужно убедиться, что Plesk/www подтянул свежий source или синхронизировать Plesk.
+**Текущий статус:** основной живой сайт `https://www.salamat-mebel.kz/` переключён с Plesk-статики на Cloudflare Worker `salamat-mebel-kz` через route `www.salamat-mebel.kz/*`. Домен `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`. Основной сайт теперь отдаёт Liquid Glass/Workers-версию с `script.js?v=20260713-1`, а `script.js` содержит `POST https://furniture-orders-mvp.pages.dev/api/orders`: быстрый телефонный блок, основная форма и чат-помощник отправляют структурированную заявку в intake API и сохраняют WhatsApp как ручной канал уточнения.
 
 ### Следующие три действия
 
 1. [x] Проверить, какой публичный сайт Salamat Mebel является основным и откуда он развёртывается.
-2. [x] Связать главный CTA сайта `https://www.salamat-mebel.kz/` с существующим intake API `furniture-orders-mvp` в source-репозитории Salamat Mebel.
+2. [x] Связать главный CTA сайта `https://www.salamat-mebel.kz/` с существующим intake API `furniture-orders-mvp` и сделать Workers-версию основной на домене.
 3. [ ] Создать одну тестовую заявку с телефона и проверить сохранение всех обязательных полей.
 
 ### Следующий единственный шаг
 
-Создать одну тестовую заявку с телефона и проверить, что она сохранилась в `furniture-orders-mvp` со всеми обязательными полями; если `www` всё ещё отдаёт Plesk-старую версию, сначала синхронизировать Plesk с обновлённым source.
+Создать одну тестовую заявку с телефона на `https://www.salamat-mebel.kz/` и проверить, что она сохранилась в `furniture-orders-mvp` со всеми обязательными полями.
 
 ### Запрещено до выполнения этих трёх действий
 
@@ -219,7 +219,7 @@
 | Этап | Состояние | Готовность | Следующий результат |
 |---|---|---:|---|
 | 0. Фиксация продукта | В работе | 70% | Единая документация и роли репозиториев |
-| 1. Пилот Salamat Mebel | Активный | 45% | Тестовая заявка с телефона сохранена в intake API |
+| 1. Пилот Salamat Mebel | Активный | 50% | Тестовая заявка с телефона сохранена в intake API |
 | 2. Повторяемость / Bek Mebel | Заблокирован | 0% | Второй бренд на одном ядре |
 | 3. Первая внешняя продажа | Заблокирован | 0% | Оплаченный пилот |
 | 4. Расширенные модули | Парковка | 0% | Развитие по запросам клиентов |
@@ -256,6 +256,15 @@
 - **Решение/вывод:** source-репозиторий Salamat Mebel подготовлен к сохранению лидов в существующий intake API без расширения архитектуры.
 - **Изменённые файлы:** `C:\tmp\salamat-mebel-kz\script.js`, `C:\tmp\salamat-mebel-kz\index.html`, `FURNITURE_INTAKE_OS_PROGRESS.md`.
 - **Следующий единственный шаг:** создать одну тестовую заявку с телефона и проверить сохранение обязательных полей в `furniture-orders-mvp`; если live `www` не обновился, сначала синхронизировать Plesk с обновлённым source.
+
+### 2026-07-13 — Переключение основного домена Salamat Mebel на Worker
+- **Цель:** сделать обновлённую Liquid Glass/Workers-версию основной для `https://www.salamat-mebel.kz/`.
+- **Сделано:** в Cloudflare zone `salamat-mebel.kz` добавлен Worker route `www.salamat-mebel.kz/* -> salamat-mebel-kz` (`e356a20abe254dcfaf2ede6921b81fe8`).
+- **Проверено:** `https://www.salamat-mebel.kz/` отвечает `200 OK` без `X-Powered-By: PleskLin`; `https://www.salamat-mebel.kz/script.js` отдаёт Worker JS с `INTAKE_API_URL = "https://furniture-orders-mvp.pages.dev/api/orders"`; `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`.
+- **Не получилось:** реальную заявку не создавал в этой сессии, потому что это следующий отдельный активный пункт.
+- **Решение/вывод:** основной домен теперь обслуживается Worker-версией и готов к телефонному end-to-end тесту заявки.
+- **Изменённые файлы:** `FURNITURE_INTAKE_OS_PROGRESS.md`, `SIMPLICITY_REVIEW.md`.
+- **Следующий единственный шаг:** создать одну тестовую заявку с телефона на `https://www.salamat-mebel.kz/` и проверить сохранение обязательных полей в `furniture-orders-mvp`.
 
 ---
 

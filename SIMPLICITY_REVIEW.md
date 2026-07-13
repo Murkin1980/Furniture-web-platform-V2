@@ -345,6 +345,18 @@ Complexity may be added ONLY when ALL of the following are true:
 5. **Failure is non-blocking:** If the new feature fails, Package A/B order intake still works.
 6. **No simultaneous activation:** Only one new module is activated at a time (per NEXT_STAGE_INSTRUCTIONS §13).
 
+---
+
+## Addendum — 2026-07-13 Salamat Mebel Landing Route
+
+**Decision:** make the existing Cloudflare Worker `salamat-mebel-kz` the primary runtime for `https://www.salamat-mebel.kz/` by adding route `www.salamat-mebel.kz/* -> salamat-mebel-kz`.
+
+**Why this is still the simplest path:** the Worker already hosted the current Liquid Glass landing design and already contained the updated intake API integration. Routing `www` to that Worker removes the split between Plesk live content and the updated landing, without adding a new backend, repository, database, queue, CRM, or automation layer.
+
+**Manual fallback:** remove the Worker route in Cloudflare to return `www.salamat-mebel.kz` traffic to the existing Plesk origin.
+
+**Stop boundary:** no new parked features are activated by this route change. The next single proof remains one real phone test that creates a saved order in `furniture-orders-mvp`.
+
 **Examples of justified complexity additions (after Phase 4.1):**
 - If visual preparation is the bottleneck → activate controlled 3D for Package B
 - If communication handling is the bottleneck → activate manager-approved WhatsApp workflow
