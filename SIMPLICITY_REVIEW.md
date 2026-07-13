@@ -361,6 +361,8 @@ Complexity may be added ONLY when ALL of the following are true:
 
 **2026-07-13 follow-up 2:** replaced visible direct WhatsApp CTAs on the Salamat landing with the existing intake-first flow. The floating button, mobile sticky WhatsApp button, contact WhatsApp action, and footer WhatsApp action now open a small lead form; WhatsApp opens only after `furniture-orders-mvp` confirms the saved lead. This removes a bypass without adding a backend, database, queue, or automation service.
 
+**2026-07-13 follow-up 3:** added FontAwesome icons and hover/transition states to make the active intake CTAs visible and interactive. Chose FontAwesome CDN instead of Lucide React because the Salamat landing is static HTML/CSS/JS and adding React would create unnecessary build complexity. No new backend, database, queue, or data path was added.
+
 **Examples of justified complexity additions (after Phase 4.1):**
 - If visual preparation is the bottleneck → activate controlled 3D for Package B
 - If communication handling is the bottleneck → activate manager-approved WhatsApp workflow
