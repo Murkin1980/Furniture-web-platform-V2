@@ -191,12 +191,17 @@
 
 **Активный этап:** Этап 1 — полный путь заявки Salamat Mebel.  
 **Текущий подэтап:** 1.1 и 1.2 — вход клиента и сбор данных.
+**Текущий статус:** основной живой сайт определён: `https://www.salamat-mebel.kz/`. Домен `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`. Фактический live-сайт сейчас отдаётся через Cloudflare → Plesk (`X-Powered-By: PleskLin`), а репозиторий `Murkin1980/salamat-mebel-kz` настроен на GitHub Pages с `CNAME=salamat-mebel.kz`, source `main:/`. В репозитории Salamat Mebel главный CTA/формы связаны с существующим `POST https://furniture-orders-mvp.pages.dev/api/orders`: быстрый телефонный блок, основная форма и чат-помощник теперь отправляют структурированную заявку в intake API и сохраняют WhatsApp как ручной канал уточнения. Перед реальным тестом нужно убедиться, что Plesk/www подтянул свежий source или синхронизировать Plesk.
 
 ### Следующие три действия
 
-1. [ ] Проверить, какой публичный сайт Salamat Mebel является основным и откуда он развёртывается.
-2. [ ] Связать главный CTA сайта с существующим intake API `furniture-orders-mvp`.
+1. [x] Проверить, какой публичный сайт Salamat Mebel является основным и откуда он развёртывается.
+2. [x] Связать главный CTA сайта `https://www.salamat-mebel.kz/` с существующим intake API `furniture-orders-mvp` в source-репозитории Salamat Mebel.
 3. [ ] Создать одну тестовую заявку с телефона и проверить сохранение всех обязательных полей.
+
+### Следующий единственный шаг
+
+Создать одну тестовую заявку с телефона и проверить, что она сохранилась в `furniture-orders-mvp` со всеми обязательными полями; если `www` всё ещё отдаёт Plesk-старую версию, сначала синхронизировать Plesk с обновлённым source.
 
 ### Запрещено до выполнения этих трёх действий
 
@@ -214,7 +219,7 @@
 | Этап | Состояние | Готовность | Следующий результат |
 |---|---|---:|---|
 | 0. Фиксация продукта | В работе | 70% | Единая документация и роли репозиториев |
-| 1. Пилот Salamat Mebel | Активный | 35% | Полный end-to-end путь заявки |
+| 1. Пилот Salamat Mebel | Активный | 45% | Тестовая заявка с телефона сохранена в intake API |
 | 2. Повторяемость / Bek Mebel | Заблокирован | 0% | Второй бренд на одном ядре |
 | 3. Первая внешняя продажа | Заблокирован | 0% | Оплаченный пилот |
 | 4. Расширенные модули | Парковка | 0% | Развитие по запросам клиентов |
@@ -233,6 +238,24 @@
 - **Решение/вывод:**
 - **Изменённые файлы:**
 - **Следующий единственный шаг:**
+
+### 2026-07-13 — Проверка публичного сайта Salamat Mebel
+- **Цель:** выполнить первый активный пункт Этапа 1: определить основной публичный сайт Salamat Mebel и источник его развёртывания.
+- **Сделано:** проверены `https://salamat-mebel.kz/`, `http://salamat-mebel.kz/`, `https://www.salamat-mebel.kz/`, GitHub repo `Murkin1980/salamat-mebel-kz`, GitHub Pages settings и список Cloudflare Pages projects.
+- **Проверено:** `https://salamat-mebel.kz/` редиректит на `https://www.salamat-mebel.kz/`; `https://www.salamat-mebel.kz/` отвечает `200 OK` и headers показывают Cloudflare + PleskLin; GitHub Pages repo `salamat-mebel-kz` имеет `CNAME=salamat-mebel.kz`, source `main:/`, latest build `built` от 2026-07-10; Cloudflare Pages project для Salamat Mebel не найден.
+- **Не получилось:** локальный `nslookup` таймаутился через текущий resolver; это не заблокировало вывод, потому что HTTP/GitHub/Cloudflare проверки дали достаточно данных.
+- **Решение/вывод:** основным живым сайтом для следующего шага считать `https://www.salamat-mebel.kz/`; источник фактического live-хостинга сейчас Plesk за Cloudflare, при этом GitHub Pages repo существует и настроен на naked domain, что нужно учитывать перед привязкой CTA.
+- **Изменённые файлы:** `FURNITURE_INTAKE_OS_PROGRESS.md`.
+- **Следующий единственный шаг:** связать главный CTA сайта `https://www.salamat-mebel.kz/` с существующим intake API `furniture-orders-mvp`.
+
+### 2026-07-13 — Связка CTA Salamat Mebel с intake API
+- **Цель:** выполнить второй активный пункт Этапа 1: подключить CTA/формы Salamat Mebel к существующему `furniture-orders-mvp`, не меняя дизайн и не добавляя backend.
+- **Сделано:** найден production endpoint `https://furniture-orders-mvp.pages.dev/api/orders`; в `Murkin1980/salamat-mebel-kz` добавлена отправка заявок из быстрого блока, основной формы и чат-помощника в `POST /api/orders`; WhatsApp оставлен как ручной канал уточнения; обновлён cache-busting для `script.js`.
+- **Проверено:** `node --check script.js`; `HEAD https://furniture-orders-mvp.pages.dev/api/orders` вернул живую Cloudflare Pages Function с `Allow: GET, POST, OPTIONS` и CORS-заголовками.
+- **Не получилось:** реальную тестовую заявку не создавал в этой сессии, потому что это следующий отдельный активный пункт; также остаётся ограничение, что `www.salamat-mebel.kz` ранее отдавался через Plesk, поэтому live-обновление нужно подтвердить после push/sync.
+- **Решение/вывод:** source-репозиторий Salamat Mebel подготовлен к сохранению лидов в существующий intake API без расширения архитектуры.
+- **Изменённые файлы:** `C:\tmp\salamat-mebel-kz\script.js`, `C:\tmp\salamat-mebel-kz\index.html`, `FURNITURE_INTAKE_OS_PROGRESS.md`.
+- **Следующий единственный шаг:** создать одну тестовую заявку с телефона и проверить сохранение обязательных полей в `furniture-orders-mvp`; если live `www` не обновился, сначала синхронизировать Plesk с обновлённым source.
 
 ---
 
